@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Data.Model", "src\Buildersoft.Andy.X.Storage.Data.Model\Buildersoft.Andy.X.Storage.Data.Model.csproj", "{25EF159D-B604-420B-85AE-D1835B88927A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Logic", "src\Buildersoft.Andy.X.Storage.Logic\Buildersoft.Andy.X.Storage.Logic.csproj", "{581E06B7-7FDA-4A37-B70C-8D2475FEB107}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Utilities", "src\Buildersoft.Andy.X.Storage.Utilities\Buildersoft.Andy.X.Storage.Utilities.csproj", "{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.FileConfig", "src\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.FileConfig.csproj", "{10F1B54B-5A98-41A4-B460-A013011788E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage", "src\Buildersoft.Andy.X.Storage\Buildersoft.Andy.X.Storage.csproj", "{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25EF159D-B604-420B-85AE-D1835B88927A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25EF159D-B604-420B-85AE-D1835B88927A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25EF159D-B604-420B-85AE-D1835B88927A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25EF159D-B604-420B-85AE-D1835B88927A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Release|Any CPU.Build.0 = Release|Any CPU
+		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10F1B54B-5A98-41A4-B460-A013011788E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10F1B54B-5A98-41A4-B460-A013011788E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10F1B54B-5A98-41A4-B460-A013011788E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10F1B54B-5A98-41A4-B460-A013011788E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA18D44A-C4E8-4CBF-AA4D-2D57DD088E71}
+	EndGlobalSection
+EndGlobal
