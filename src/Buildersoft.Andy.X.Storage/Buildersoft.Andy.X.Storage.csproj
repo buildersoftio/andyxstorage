@@ -10,7 +10,6 @@
     <Copyright>Copyright © Buildersoft 2020</Copyright>
     <UserSecretsId>2b4c6cd7-1395-4fc8-8621-442fa15e57f9</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>

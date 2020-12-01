@@ -36,6 +36,12 @@ namespace Buildersoft.Andy.X.Storage.Logic.Repositories
             throw new NotImplementedException();
         }
 
+        public bool Edit(string key, Message entity)
+        {
+            // No update to the message is alowed
+            return false;
+        }
+
         public Message Get(string key)
         {
             throw new NotImplementedException();

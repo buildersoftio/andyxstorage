@@ -33,6 +33,17 @@ namespace Buildersoft.Andy.X.Storage.Logic.Repositories
             return false;
         }
 
+        public bool Edit(string key, Product entity)
+        {
+            if (_products.ContainsKey(key))
+            {
+                _products[key] = entity;
+                base.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
         public Product Get(string key)
         {
             if (_products.ContainsKey(key))

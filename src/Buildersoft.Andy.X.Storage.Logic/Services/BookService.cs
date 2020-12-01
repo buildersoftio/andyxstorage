@@ -4,6 +4,7 @@ using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,11 +14,11 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 {
     public class BookService : IBookService
     {
-        private readonly ITenantRepository _repository;
+        private readonly ILogger<BookService> _logger;
         private BookRepository _bookRepository;
-        public BookService(ITenantRepository repository)
+        public BookService(ILogger<BookService> logger)
         {
-            _repository = repository;
+            _logger = logger;
         }
 
         public void CreateBook(BookCreatedArgs bookCreatedArgs)
@@ -39,6 +40,7 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
             };
 
             _bookRepository.Add(bookCreatedArgs.BookName, book);
+            _logger.LogInformation($"{bookCreatedArgs.TenantName}/{bookCreatedArgs.ProductName}/{bookCreatedArgs.ComponentName}/{bookCreatedArgs.BookName}: stored");
         }
 
         public bool DeleteBook(BookDeletedArgs bookDeletedArgs)

@@ -1,11 +1,13 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model;
 using Buildersoft.Andy.X.Storage.FileConfig.Configurations;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.Providers
@@ -22,6 +24,10 @@ namespace Buildersoft.Andy.X.Storage.Providers
             if (dataStorage.DataStorageName != "" && andyXProperty.Name != "")
             {
                 _connection = new HubConnectionBuilder()
+                    .AddJsonProtocol(opts =>
+                    {
+                        opts.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    })
                     .WithUrl($"{andyXProperty.Url}/realtime/v1/datastorage", option =>
                     {
                         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");

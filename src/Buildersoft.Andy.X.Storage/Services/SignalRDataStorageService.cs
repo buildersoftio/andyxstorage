@@ -52,6 +52,7 @@ namespace Buildersoft.Andy.X.Storage.Services
         public event Action<BookDeletedArgs> BookDeleted;
 
         public event Action<MessageStoredArgs> MessageStored;
+        public event Action<MessageAcknowledgedArgs> MessageAcknowledgeStored;
         public event Action<ReaderStoredArgs> ReaderStored;
 
         public SignalRDataStorageService(ILogger<SignalRDataStorageService> logger, HubConnectionProvider connectionProvider)
@@ -83,6 +84,7 @@ namespace Buildersoft.Andy.X.Storage.Services
             _connection.On<BookDeletedArgs>("BookDeleted", book => BookDeleted?.Invoke(book));
 
             _connection.On<MessageStoredArgs>("MessageStored", message => MessageStored?.Invoke(message));
+            _connection.On<MessageAcknowledgedArgs>("MessageAcknowledgeStored", message => MessageAcknowledgeStored?.Invoke(message));
             _connection.On<ReaderStoredArgs>("ReaderStored", reader => ReaderStored(reader));
 
             _ = ConnectAsync();
@@ -93,7 +95,7 @@ namespace Buildersoft.Andy.X.Storage.Services
                 .Build();
 
             _connectionAgent.TaskAssigned += ConnectionAgent_TaskAssigned;
-            _connectionAgent.Start();;
+            _connectionAgent.Start();
         }
 
         private void ConnectionAgent_TaskAssigned(object sender, TaskAssignedEventArgs e)
@@ -101,7 +103,7 @@ namespace Buildersoft.Andy.X.Storage.Services
             switch (_connection.State)
             {
                 case HubConnectionState.Disconnected:
-                    _logger.LogInformation($"Andy X Data Storage is trying to connect to Andy X Broker. Connection state {_connection.State.ToString()}");
+                    _logger.LogWarning($"Andy X Data Storage is trying to connect to Andy X Node. Connection state {_connection.State.ToString()}");
                     _ = ConnectAsync();
                     break;
                 case HubConnectionState.Connected:
@@ -119,6 +121,7 @@ namespace Buildersoft.Andy.X.Storage.Services
                 {
                     // Add exception like   
                     // Unable to connect to DataStorageHub in remote.
+                    _logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}");
                 }
             });
         }

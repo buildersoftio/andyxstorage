@@ -5,6 +5,7 @@ using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,11 +15,12 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 {
     public class ProductService : IProductService
     {
-        private readonly ITenantRepository _repository;
+        private readonly ILogger<ProductService> _logger;
+
         private ProductRepository _productRepository;
-        public ProductService(ITenantRepository repository)
+        public ProductService(ILogger<ProductService> logger)
         {
-            _repository = repository;
+            _logger = logger;
         }
 
         public void CreateProduct(ProductCreatedArgs productCreatedArgs)
@@ -39,6 +41,7 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
                 Location = productLocation
             };
             _productRepository.Add(productCreatedArgs.ProductName, product);
+            _logger.LogInformation($"{productCreatedArgs.TenantName}/{productCreatedArgs.ProductName}: stored");
         }
 
         public bool DeleteProduct(ProductDeletedArgs ProductDeletedArgs)

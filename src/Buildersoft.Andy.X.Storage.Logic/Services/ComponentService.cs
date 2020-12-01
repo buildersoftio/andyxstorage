@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,11 +13,12 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 {
     public class ComponentService : IComponentService
     {
-        private readonly ITenantRepository _repository;
+        private readonly ILogger<ComponentService> _logger;
+
         private ComponentRepository _componentRepository;
-        public ComponentService(ITenantRepository repository)
+        public ComponentService(ILogger<ComponentService> logger)
         {
-            _repository = repository;
+            _logger = logger;
         }
         public void CreateComponent(ComponentCreatedArgs componentCreatedArgs)
         {
@@ -36,6 +38,7 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
             };
 
             _componentRepository.Add(componentCreatedArgs.ComponentName, component);
+            _logger.LogInformation($"{componentCreatedArgs.TenantName}/{componentCreatedArgs.ProductName}/{componentCreatedArgs.ComponentName}: stored");
         }
 
         public bool DeleteComponent(ComponentDeletedArgs componentDeletedArgs)

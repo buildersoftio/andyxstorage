@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Storage.Data.Model.Tenants;
 using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,9 +14,11 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 {
     public class TenantService : ITenantService
     {
+        private readonly ILogger<TenantService> _logger;
         private readonly ITenantRepository _repository;
-        public TenantService(ITenantRepository repository)
+        public TenantService(ILogger<TenantService> logger, ITenantRepository repository)
         {
+            _logger = logger;
             _repository = repository;
         }
 
@@ -36,7 +39,10 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
                 Signature = tenantCreatedArgs.Signature,
                 Location = tenantLocation
             };
+
             _repository.AddTenant(tenant);
+
+            _logger.LogInformation($"{tenantCreatedArgs.TenantName}: stored");
         }
 
         public bool DeleteTenant(TenantDeletedArgs tenantDeletedArgs)
@@ -58,7 +64,6 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
             if (_repository.GetAll().ContainsKey(tenantReadArgs.TenantName) != true)
                 throw new Exception($"There is a tenant registered with this name andyx://{tenantReadArgs.TenantName}");
             return _repository.GetAll()[tenantReadArgs.TenantName];
-
         }
 
         public ConcurrentDictionary<string, Tenant> ReadTenants()

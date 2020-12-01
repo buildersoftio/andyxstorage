@@ -5,6 +5,7 @@ using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
 using Buildersoft.Andy.X.Storage.Utilities.Extensions;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,21 +15,26 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 {
     public class MessageService : IMessageService
     {
-        private readonly ITenantRepository _repository;
+        private readonly ILogger<MessageService> _logger;
         private BookRepository _bookRepository;
 
-        public MessageService(ITenantRepository tenantRepository)
+        public MessageService(ILogger<MessageService> logger)
         {
-            _repository = tenantRepository;
+            _logger = logger;
         }
 
         public void StoreMessage(MessageStoredArgs messageStoredArgs)
         {
-            var book = _repository.GetBook(messageStoredArgs.Tenant, messageStoredArgs.Product, messageStoredArgs.Component, messageStoredArgs.Book);
+            _bookRepository = new BookRepository(messageStoredArgs.Tenant, messageStoredArgs.Product, messageStoredArgs.Component);
+            var book = _bookRepository.Get(messageStoredArgs.Book);
+
             var fragmentId = book.Fragmentation.CurrentFragmentId;
             var bookLocation = TenantConfigFile.CreateBookLocation(messageStoredArgs.Tenant, messageStoredArgs.Product, messageStoredArgs.Component, messageStoredArgs.Book, fragmentId);
-            
-            MessageConfigFile.SaveMessageFile(fragmentId, bookLocation, messageStoredArgs.MessageId, messageStoredArgs.Message);
+
+            if (MessageConfigFile.SaveMessageFile(fragmentId, bookLocation, messageStoredArgs.MessageId, messageStoredArgs.Message) != true)
+                _logger.LogError($"{messageStoredArgs.Tenant}/{messageStoredArgs.Product}/{messageStoredArgs.Component}/{messageStoredArgs.Book}/messages/{messageStoredArgs.MessageId}: failed");
+
+            _logger.LogInformation($"{messageStoredArgs.Tenant}/{messageStoredArgs.Product}/{messageStoredArgs.Component}/{messageStoredArgs.Book}/messages/{messageStoredArgs.MessageId}: stored");
 
             // This line will be executed in a different thread (This logic should be centralized inside a background service e.g. FragmentationService);
             CheckFragmentation(bookLocation, book);
@@ -41,7 +47,9 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
             if (messagesInFragmentedMessageDir >= book.Fragmentation.MaxNumberOfRecordsForFragment)
             {
                 book.Fragmentation.CurrentFragmentId = Randoms.Generate6Digits();
-                _repository.SaveChanges();
+
+                _bookRepository.SaveChanges();
+                _logger.LogInformation($"{book.Name} is fragmented,current fragmentation id: {book.Fragmentation.CurrentFragmentId}");
             }
         }
     }
