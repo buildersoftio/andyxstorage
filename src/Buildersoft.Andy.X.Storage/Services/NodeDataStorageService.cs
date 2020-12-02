@@ -21,9 +21,9 @@ using System.Timers;
 
 namespace Buildersoft.Andy.X.Storage.Services
 {
-    public class SignalRDataStorageService
+    public class NodeDataStorageService
     {
-        private readonly ILogger<SignalRDataStorageService> _logger;
+        private readonly ILogger<NodeDataStorageService> _logger;
         private readonly HubConnection _connection;
 
         private BackgroundAgent _connectionAgent;
@@ -55,7 +55,7 @@ namespace Buildersoft.Andy.X.Storage.Services
         public event Action<MessageAcknowledgedArgs> MessageAcknowledgeStored;
         public event Action<ReaderStoredArgs> ReaderStored;
 
-        public SignalRDataStorageService(ILogger<SignalRDataStorageService> logger, HubConnectionProvider connectionProvider)
+        public NodeDataStorageService(ILogger<NodeDataStorageService> logger, HubConnectionProvider connectionProvider)
         {
             _logger = logger;
             _connection = connectionProvider.GetHubConnection();

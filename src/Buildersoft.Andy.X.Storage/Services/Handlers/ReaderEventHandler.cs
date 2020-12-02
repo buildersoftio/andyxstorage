@@ -8,10 +8,10 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
 {
     public class ReaderEventHandler
     {
-        private readonly SignalRDataStorageService _service;
+        private readonly NodeDataStorageService _service;
         private readonly IReaderService _readerService;
 
-        public ReaderEventHandler(SignalRDataStorageService service, IReaderService readerService)
+        public ReaderEventHandler(NodeDataStorageService service, IReaderService readerService)
         {
             _service = service;
             _readerService = readerService;

@@ -8,8 +8,8 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
 {
     public class StorageEventHandler
     {
-        private readonly SignalRDataStorageService _service;
-        public StorageEventHandler(SignalRDataStorageService service)
+        private readonly NodeDataStorageService _service;
+        public StorageEventHandler(NodeDataStorageService service)
         {
             _service = service;
             InitializeEvents();

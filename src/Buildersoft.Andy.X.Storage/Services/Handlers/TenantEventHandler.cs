@@ -9,9 +9,9 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
 {
     public class TenantEventHandler
     {
-        private readonly SignalRDataStorageService _service;
+        private readonly NodeDataStorageService _service;
         private readonly ITenantService _tenantService;
-        public TenantEventHandler(SignalRDataStorageService service, ITenantService tenantService)
+        public TenantEventHandler(NodeDataStorageService service, ITenantService tenantService)
         {
             _service = service;
             _tenantService = tenantService;

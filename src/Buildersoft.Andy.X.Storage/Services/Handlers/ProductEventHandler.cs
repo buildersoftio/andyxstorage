@@ -9,10 +9,10 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
 
     public class ProductEventHandler
     {
-        private readonly SignalRDataStorageService _service;
+        private readonly NodeDataStorageService _service;
         private readonly IProductService _productService;
 
-        public ProductEventHandler(SignalRDataStorageService service, IProductService productService)
+        public ProductEventHandler(NodeDataStorageService service, IProductService productService)
         {
             _service = service;
             _productService = productService;

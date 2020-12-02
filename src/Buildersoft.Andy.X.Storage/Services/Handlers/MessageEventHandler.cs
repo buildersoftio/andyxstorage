@@ -10,10 +10,10 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
     public class MessageEventHandler
     {
         private readonly ILogger<MessageEventHandler> _logger;
-        private readonly SignalRDataStorageService _service;
+        private readonly NodeDataStorageService _service;
         private readonly IMessageService _messageService;
 
-        public MessageEventHandler(ILogger<MessageEventHandler> logger, SignalRDataStorageService service, IMessageService messageService)
+        public MessageEventHandler(ILogger<MessageEventHandler> logger, NodeDataStorageService service, IMessageService messageService)
         {
             _service = service;
             _messageService = messageService;

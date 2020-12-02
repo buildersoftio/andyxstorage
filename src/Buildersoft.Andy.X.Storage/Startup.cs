@@ -55,7 +55,7 @@ namespace Buildersoft.Andy.X.Storage
             services.AddSingleton<HubConnectionProvider>();
 
             // Add SignalR DataStorage Client Service
-            services.AddSingleton<SignalRDataStorageService>();
+            services.AddSingleton<NodeDataStorageService>();
 
             services.AddSignalRRepositories();
             services.AddSignalRServices();
