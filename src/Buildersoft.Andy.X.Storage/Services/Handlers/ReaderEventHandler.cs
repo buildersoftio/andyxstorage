@@ -21,12 +21,18 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
 
         private void InitializeEvents()
         {
-            _service.ReaderStored += _service_ReaderStored;
+            _service.ReaderConnectStored += Service_ReaderStored;
+            _service.ReaderDisconnectStored += Service_ReaderDisconnectStored;
         }
 
-        private void _service_ReaderStored(Data.Model.Events.Readers.ReaderStoredArgs obj)
+        private void Service_ReaderDisconnectStored(Data.Model.Events.Readers.ReaderStoredArgs obj)
         {
-            _readerService.StoreReader(obj);
+            _readerService.StoreDisconnectedReader(obj);
+        }
+
+        private void Service_ReaderStored(Data.Model.Events.Readers.ReaderStoredArgs obj)
+        {
+            _readerService.StoreConnectedReader(obj);
         }
     }
 }

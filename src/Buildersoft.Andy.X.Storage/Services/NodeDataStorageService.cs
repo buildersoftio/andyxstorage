@@ -52,8 +52,10 @@ namespace Buildersoft.Andy.X.Storage.Services
         public event Action<BookDeletedArgs> BookDeleted;
 
         public event Action<MessageStoredArgs> MessageStored;
-        public event Action<MessageAcknowledgedArgs> MessageAcknowledgeStored;
-        public event Action<ReaderStoredArgs> ReaderStored;
+        public event Action<MessageLogedArgs> MessageLogStored;
+
+        public event Action<ReaderStoredArgs> ReaderConnectStored;
+        public event Action<ReaderStoredArgs> ReaderDisconnectStored;
 
         public NodeDataStorageService(ILogger<NodeDataStorageService> logger, HubConnectionProvider connectionProvider)
         {
@@ -84,8 +86,9 @@ namespace Buildersoft.Andy.X.Storage.Services
             _connection.On<BookDeletedArgs>("BookDeleted", book => BookDeleted?.Invoke(book));
 
             _connection.On<MessageStoredArgs>("MessageStored", message => MessageStored?.Invoke(message));
-            _connection.On<MessageAcknowledgedArgs>("MessageAcknowledgeStored", message => MessageAcknowledgeStored?.Invoke(message));
-            _connection.On<ReaderStoredArgs>("ReaderStored", reader => ReaderStored(reader));
+            _connection.On<MessageLogedArgs>("MessageLogStored", message => MessageLogStored?.Invoke(message));
+            _connection.On<ReaderStoredArgs>("ReaderConnectStored", reader => ReaderConnectStored(reader));
+            _connection.On<ReaderStoredArgs>("ReaderDisconnectStored", reader => ReaderDisconnectStored(reader));
 
             _ = ConnectAsync();
 

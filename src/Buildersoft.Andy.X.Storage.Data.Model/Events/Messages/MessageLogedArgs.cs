@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Buildersoft.Andy.X.Storage.Data.Model.Events.Messages
 {
-    public class MessageAcknowledgedArgs
+    public class MessageLogedArgs
     {
         public string Tenant { get; set; }
         public string Product { get; set; }
@@ -12,5 +12,7 @@ namespace Buildersoft.Andy.X.Storage.Data.Model.Events.Messages
         public string Book { get; set; }
         public string Reader { get; set; }
         public string MessageId { get; set; }
+        public string Log { get; set; }
+        public DateTime Date { get; set; }
     }
 }

@@ -16,13 +16,20 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
         {
             _logger = logger;
         }
-        public void StoreReader(ReaderStoredArgs readerStoredArgs)
+        public void StoreConnectedReader(ReaderStoredArgs readerStoredArgs)
         {
             string bookLocation = TenantConfigFile.CreateBookLocation(readerStoredArgs.Tenant, readerStoredArgs.Product, readerStoredArgs.Component, readerStoredArgs.Book);
             if (ReaderConfigFile.SaveReaderConfigFile(bookLocation, readerStoredArgs.ReaderName, readerStoredArgs) != true)
                 _logger.LogError($"{readerStoredArgs.Tenant}/{readerStoredArgs.Product}/{readerStoredArgs.Component}/{readerStoredArgs.Book}/readers/{readerStoredArgs.ReaderName}: failed");
 
-            _logger.LogInformation($"{readerStoredArgs.Tenant}/{readerStoredArgs.Product}/{readerStoredArgs.Component}/{readerStoredArgs.Book}/readers/{readerStoredArgs.ReaderName}: stored");
+            _logger.LogInformation($"{readerStoredArgs.Tenant}/{readerStoredArgs.Product}/{readerStoredArgs.Component}/{readerStoredArgs.Book}/readers/{readerStoredArgs.ReaderName}: connected");
+        }
+
+        public void StoreDisconnectedReader(ReaderStoredArgs readerStoredArgs)
+        {
+            string bookLocation = TenantConfigFile.CreateBookLocation(readerStoredArgs.Tenant, readerStoredArgs.Product, readerStoredArgs.Component, readerStoredArgs.Book);
+            string logLine = $"{DateTime.Now.ToString("yyyy-MMM-dd HH:mm:ss")}\t{readerStoredArgs.ReaderName}\tdisconnected";
+            ReaderConfigFile.StoreLogInReader(bookLocation, readerStoredArgs.ReaderName, logLine);
         }
     }
 }

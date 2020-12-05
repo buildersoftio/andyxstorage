@@ -25,12 +25,12 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
         private void InitializeEvents()
         {
             _service.MessageStored += DataStorageService_MessageStored;
-            _service.MessageAcknowledgeStored += DataStorageService_MessageAcknowledgeStored;
+            _service.MessageLogStored += DataStorageService_MessageLogStored;
         }
 
-        private void DataStorageService_MessageAcknowledgeStored(Data.Model.Events.Messages.MessageAcknowledgedArgs obj)
+        private void DataStorageService_MessageLogStored(Data.Model.Events.Messages.MessageLogedArgs obj)
         {
-            //TODO... Implemented and store the acked message from the reader.
+            _messageService.StoreMessageLogToReader(obj);
         }
 
         private void DataStorageService_MessageStored(Data.Model.Events.Messages.MessageStoredArgs obj)

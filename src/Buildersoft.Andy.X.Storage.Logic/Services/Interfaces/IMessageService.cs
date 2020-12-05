@@ -8,5 +8,6 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services.Interfaces
     public interface IMessageService
     {
         void StoreMessage(MessageStoredArgs messageStoredArgs);
+        void StoreMessageLogToReader(MessageLogedArgs messageAcknowledgedArgs);
     }
 }

@@ -25,11 +25,9 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 
         public void StoreMessage(MessageStoredArgs messageStoredArgs)
         {
-            _bookRepository = new BookRepository(messageStoredArgs.Tenant, messageStoredArgs.Product, messageStoredArgs.Component);
-            var book = _bookRepository.Get(messageStoredArgs.Book);
-
-            var fragmentId = book.Fragmentation.CurrentFragmentId;
-            var bookLocation = TenantConfigFile.CreateBookLocation(messageStoredArgs.Tenant, messageStoredArgs.Product, messageStoredArgs.Component, messageStoredArgs.Book, fragmentId);
+            Book book;
+            string fragmentId, bookLocation;
+            GetBookInfos(messageStoredArgs.Tenant, messageStoredArgs.Product, messageStoredArgs.Component, messageStoredArgs.Book, out book, out fragmentId, out bookLocation);
 
             if (MessageConfigFile.SaveMessageFile(fragmentId, bookLocation, messageStoredArgs.MessageId, messageStoredArgs.Message) != true)
                 _logger.LogError($"{messageStoredArgs.Tenant}/{messageStoredArgs.Product}/{messageStoredArgs.Component}/{messageStoredArgs.Book}/messages/{messageStoredArgs.MessageId}: failed");
@@ -38,6 +36,25 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 
             // This line will be executed in a different thread (This logic should be centralized inside a background service e.g. FragmentationService);
             CheckFragmentation(bookLocation, book);
+        }
+
+        public void StoreMessageLogToReader(MessageLogedArgs messageAcknowledgedArgs)
+        {
+            Book book;
+            string fragmentId, bookLocation;
+            GetBookInfos(messageAcknowledgedArgs.Tenant, messageAcknowledgedArgs.Product, messageAcknowledgedArgs.Component, messageAcknowledgedArgs.Book, out book, out fragmentId, out bookLocation);
+
+            string logLine = $"{messageAcknowledgedArgs.Date.ToString("yyyy-MMM-dd HH:mm:ss")}\t{messageAcknowledgedArgs.MessageId}\t{messageAcknowledgedArgs.Log}";
+            if (ReaderConfigFile.StoreLogInReader(bookLocation, messageAcknowledgedArgs.Reader, logLine) != true)
+                _logger.LogError($"{messageAcknowledgedArgs.Tenant}/{messageAcknowledgedArgs.Product}/{messageAcknowledgedArgs.Component}/{messageAcknowledgedArgs.Book}/messages/{messageAcknowledgedArgs.MessageId}: failed to log in reader {messageAcknowledgedArgs.Reader}");
+        }
+
+        private void GetBookInfos(string tenant, string product, string component, string book, out Book bookDetail, out string fragmentId, out string bookLocation)
+        {
+            _bookRepository = new BookRepository(tenant, product, component);
+            bookDetail = _bookRepository.Get(book);
+            fragmentId = bookDetail.Fragmentation.CurrentFragmentId;
+            bookLocation = TenantConfigFile.CreateBookLocation(tenant, product, component, book, fragmentId);
         }
 
         private void CheckFragmentation(string bookLocation, Book book)

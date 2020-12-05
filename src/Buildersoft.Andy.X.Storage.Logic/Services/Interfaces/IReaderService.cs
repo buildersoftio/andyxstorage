@@ -7,6 +7,7 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services.Interfaces
 {
     public interface IReaderService
     {
-        void StoreReader(ReaderStoredArgs readerStoredArgs);
+        void StoreConnectedReader(ReaderStoredArgs readerStoredArgs);
+        void StoreDisconnectedReader(ReaderStoredArgs readerStoredArgs);
     }
 }
