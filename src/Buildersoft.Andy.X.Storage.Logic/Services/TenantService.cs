@@ -37,7 +37,11 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
                 Name = tenantCreatedArgs.TenantName,
                 Encryption = tenantCreatedArgs.Encryption,
                 Signature = tenantCreatedArgs.Signature,
-                Location = tenantLocation
+                Location = tenantLocation,
+                Description = tenantCreatedArgs.TenantDescription,
+                Status = tenantCreatedArgs.TenantStatus,
+                CreatedDate = DateTime.Now,
+                ModifiedDate = DateTime.Now
             };
 
             _repository.AddTenant(tenant);

@@ -11,7 +11,7 @@ namespace Buildersoft.Andy.X.Storage.Data.Model.Products
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public bool IsActive { get; set; }
+        public bool Status { get; set; }
         public ConcurrentDictionary<string, Component> Components { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
@@ -24,7 +24,6 @@ namespace Buildersoft.Andy.X.Storage.Data.Model.Products
         public void SetId(Guid productId)
         {
             Id = productId;
-            IsActive = true;
         }
     }
 }
