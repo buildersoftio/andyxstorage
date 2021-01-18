@@ -10,5 +10,7 @@ namespace Buildersoft.Andy.X.Storage.Data.Model.Events.Components
         public string TenantName { get; set; }
         public string ProductName { get; set; }
         public string ComponentName { get; set; }
+        public string ComponentDescription { get; set; }
+        public bool ComponentStatus { get; set; }
     }
 }

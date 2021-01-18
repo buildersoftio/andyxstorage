@@ -11,7 +11,7 @@ namespace Buildersoft.Andy.X.Storage.Data.Model.Components
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public bool IsActive { get; set; }
+        public bool Status { get; set; }
         public ConcurrentDictionary<string, Book> Books { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
@@ -20,7 +20,7 @@ namespace Buildersoft.Andy.X.Storage.Data.Model.Components
         public Component()
         {
             Books = new ConcurrentDictionary<string, Book>();
-            IsActive = true;
+            Status = true;
         }
         public void SetId(Guid id)
         {

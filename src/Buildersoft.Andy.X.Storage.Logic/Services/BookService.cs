@@ -36,6 +36,8 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
                 Id = bookCreatedArgs.BookId,
                 Name = bookCreatedArgs.BookName,
                 DataType = bookCreatedArgs.DataType,
+                ModifiedDate = DateTime.Now,
+                CreatedDate = DateTime.Now,
                 Location = bookLocation
             };
 

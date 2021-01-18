@@ -38,6 +38,10 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
             {
                 Id = productCreatedArgs.ProductId,
                 Name = productCreatedArgs.ProductName,
+                Status = productCreatedArgs.ProductStatus,
+                Description = productCreatedArgs.ProductDescription,
+                ModifiedDate = DateTime.Now,
+                CreatedDate = DateTime.Now,
                 Location = productLocation
             };
             _productRepository.Add(productCreatedArgs.ProductName, product);

@@ -34,6 +34,10 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
             {
                 Id = componentCreatedArgs.ComponentId,
                 Name = componentCreatedArgs.ComponentName,
+                Description = componentCreatedArgs.ComponentDescription,
+                Status = componentCreatedArgs.ComponentStatus,
+                CreatedDate = DateTime.Now,
+                ModifiedDate = DateTime.Now,
                 Location = componentLocation
             };
 

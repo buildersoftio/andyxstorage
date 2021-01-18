@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>1.0.20.73</Version>
+    <Version>1.0.20.74</Version>
     <Company>Buildersoft</Company>
     <Product>Buildersoft Andy</Product>
     <Authors>Buildersoft</Authors>
