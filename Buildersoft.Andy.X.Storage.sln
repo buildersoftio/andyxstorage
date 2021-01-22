@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Utilities", "src\Buildersoft.Andy.X.Storage.Utilities\Buildersoft.Andy.X.Storage.Utilities.csproj", "{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.FileConfig", "src\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.FileConfig.csproj", "{10F1B54B-5A98-41A4-B460-A013011788E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.IO", "src\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.IO.csproj", "{10F1B54B-5A98-41A4-B460-A013011788E1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage", "src\Buildersoft.Andy.X.Storage\Buildersoft.Andy.X.Storage.csproj", "{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}"
 EndProject
