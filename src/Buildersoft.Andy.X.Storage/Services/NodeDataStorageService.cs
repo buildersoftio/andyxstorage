@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Agents.Models;
 using Buildersoft.Andy.X.Storage.Data.Model;
 using Buildersoft.Andy.X.Storage.Data.Model.Events;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Books;
+using Buildersoft.Andy.X.Storage.Data.Model.Events.Books.Schemas;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Components;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Products;
@@ -51,6 +52,8 @@ namespace Buildersoft.Andy.X.Storage.Services
         public event Action<BookUpdatedArgs> BookUpdated;
         public event Action<BookDeletedArgs> BookDeleted;
 
+        public event Action<BookSchemaUpdatedArgs> BookSchemaUpdated;
+
         public event Action<MessageStoredArgs> MessageStored;
         public event Action<MessageLogedArgs> MessageLogStored;
 
@@ -84,6 +87,8 @@ namespace Buildersoft.Andy.X.Storage.Services
             _connection.On<BookReadArgs>("BookRead", book => BookRead?.Invoke(book));
             _connection.On<BookUpdatedArgs>("BookUpdated", book => BookUpdated?.Invoke(book));
             _connection.On<BookDeletedArgs>("BookDeleted", book => BookDeleted?.Invoke(book));
+
+            _connection.On<BookSchemaUpdatedArgs>("BookSchemaUpdated", book => BookSchemaUpdated?.Invoke(book));
 
             _connection.On<MessageStoredArgs>("MessageStored", message => MessageStored?.Invoke(message));
             _connection.On<MessageLogedArgs>("MessageLogStored", message => MessageLogStored?.Invoke(message));

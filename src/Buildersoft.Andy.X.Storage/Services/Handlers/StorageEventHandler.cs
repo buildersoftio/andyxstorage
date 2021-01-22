@@ -1,4 +1,4 @@
-﻿using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
+﻿using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
 using System;
 using System.Collections.Generic;
 using System.Linq;

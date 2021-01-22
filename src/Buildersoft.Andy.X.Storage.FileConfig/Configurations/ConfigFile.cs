@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Buildersoft.Andy.X.Storage.FileConfig.Configurations
+namespace Buildersoft.Andy.X.Storage.IO.Configurations
 {
     public static class ConfigFile
     {

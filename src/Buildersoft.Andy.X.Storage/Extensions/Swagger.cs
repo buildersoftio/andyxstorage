@@ -16,7 +16,7 @@ namespace Buildersoft.Andy.X.Storage.Extensions
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Version = "Preview",
+                    Version = "v1.1",
                     Title = "Buildersoft Andy X Data Storage",
                     Description = "Welcome to Buildersoft Andy X, the first distributed message streaming platform designed for .NET"
                 });

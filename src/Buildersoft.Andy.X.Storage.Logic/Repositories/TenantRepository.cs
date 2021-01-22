@@ -1,15 +1,11 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model.Books;
 using Buildersoft.Andy.X.Storage.Data.Model.Components;
-using Buildersoft.Andy.X.Storage.Data.Model.Events;
 using Buildersoft.Andy.X.Storage.Data.Model.Products;
 using Buildersoft.Andy.X.Storage.Data.Model.Tenants;
-using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
+using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Buildersoft.Andy.X.Storage.Logic.Repositories
 {

@@ -1,6 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model.Books;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Messages;
-using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
+using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
@@ -59,7 +59,7 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services
 
         private void CheckFragmentation(string bookLocation, Book book)
         {
-            string messageDirLocation = Path.Combine(bookLocation, $"Messages_{book.Fragmentation.CurrentFragmentId}");
+            string messageDirLocation = Path.Combine(bookLocation, "Messages", $"{book.Fragmentation.CurrentFragmentId}");
             int messagesInFragmentedMessageDir = Directory.GetFiles(messageDirLocation).Length;
             if (messagesInFragmentedMessageDir >= book.Fragmentation.MaxNumberOfRecordsForFragment)
             {

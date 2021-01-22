@@ -1,6 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model;
 using Buildersoft.Andy.X.Storage.Data.Model.Products;
-using Buildersoft.Andy.X.Storage.FileConfig.Configurations;
+using Buildersoft.Andy.X.Storage.IO.Configurations;
 using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services;
