@@ -1,6 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model.Events.Tenants;
 using Buildersoft.Andy.X.Storage.Data.Model.Tenants;
-using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
+using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
 using Microsoft.Extensions.Logging;

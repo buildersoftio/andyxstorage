@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants
+namespace Buildersoft.Andy.X.Storage.IO.Storage.Tenants
 {
     public static class ReaderConfigFile
     {

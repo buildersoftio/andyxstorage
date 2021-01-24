@@ -1,5 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model.Books;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Books;
+using Buildersoft.Andy.X.Storage.Data.Model.Events.Books.Schemas;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ namespace Buildersoft.Andy.X.Storage.Logic.Services.Interfaces
         Book ReadBook(BookReadArgs bookReadArgs);
         ConcurrentDictionary<string, Book> ReadBooks();
         bool DeleteBook(BookDeletedArgs bookDeletedArgs);
+
+        void UpdateBookSchema(BookSchemaUpdatedArgs bookSchemaUpdatedArgs);
 
     }
 }

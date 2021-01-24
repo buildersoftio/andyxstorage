@@ -16,9 +16,9 @@ namespace Buildersoft.Andy.X.Storage.Extensions
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Version = "Preview",
+                    Version = "v1.1",
                     Title = "Buildersoft Andy X Data Storage",
-                    Description = "Welcome to Buildersoft Andy X, the first distributed message streaming platform designed for .NET"
+                    Description = "Andy X Data Storage is an open-source standalone service that is used to store messages for Andy X. The Data Storage service is offers support for Multitenancy storage. X Data Storage hosts all messages and makes sure that all of them are readable for the client."
                 });
             });
             return services;

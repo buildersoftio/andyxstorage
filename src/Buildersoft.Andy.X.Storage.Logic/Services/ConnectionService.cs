@@ -1,6 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model;
 using Buildersoft.Andy.X.Storage.Data.Model.Tenants;
-using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
+using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Utilities.Extensions;
 using Microsoft.AspNetCore.Mvc;

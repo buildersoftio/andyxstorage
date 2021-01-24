@@ -1,9 +1,11 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model.Books;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Buildersoft.Andy.X.Storage.Data.Model.Events.Books
+namespace Buildersoft.Andy.X.Storage.Data.Model.Events.Books.Schemas
 {
-    public class BookCreatedArgs
+    public class BookSchemaUpdatedArgs
     {
         public Guid BookId { get; set; }
         public string TenantName { get; set; }

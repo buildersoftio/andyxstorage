@@ -24,6 +24,8 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
             _service.BookRead += DataStorageService_BookRead;
             _service.BookUpdated += DataStorageService_BookUpdated;
             _service.BookDeleted += DataStorageService_BookDeleted;
+
+            _service.BookSchemaUpdated += _service_BookSchemaUpdated;
         }
 
         private void DataStorageService_BookDeleted(Data.Model.Events.Books.BookDeletedArgs obj)
@@ -44,6 +46,10 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
         private void DataStorageService_BookCreated(Data.Model.Events.Books.BookCreatedArgs obj)
         {
             _bookService.CreateBook(obj);
+        }
+        private void _service_BookSchemaUpdated(Data.Model.Events.Books.Schemas.BookSchemaUpdatedArgs obj)
+        {
+            _bookService.UpdateBookSchema(obj);
         }
     }
 }

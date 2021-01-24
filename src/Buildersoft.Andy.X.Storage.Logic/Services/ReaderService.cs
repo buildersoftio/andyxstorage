@@ -1,5 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model.Events.Readers;
-using Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants;
+using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
 using Buildersoft.Andy.X.Storage.Logic.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using System;

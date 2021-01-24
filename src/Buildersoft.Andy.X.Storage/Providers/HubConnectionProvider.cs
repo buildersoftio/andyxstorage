@@ -1,5 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Data.Model;
-using Buildersoft.Andy.X.Storage.FileConfig.Configurations;
+using Buildersoft.Andy.X.Storage.IO.Configurations;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

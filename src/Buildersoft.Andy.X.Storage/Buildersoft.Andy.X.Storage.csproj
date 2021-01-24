@@ -2,19 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>1.0.20.74</Version>
+    <Version>1.1.20.75</Version>
     <Company>Buildersoft</Company>
     <Product>Buildersoft Andy</Product>
     <Authors>Buildersoft</Authors>
     <Description>Buildersoft Andy X is a distributed messaging system. This system will empower developers to move into Event Driven Systems. Andy X is a multi-tenant system.</Description>
-    <Copyright>Copyright © Buildersoft 2020</Copyright>
+    <Copyright>Copyright © Buildersoft 2021</Copyright>
     <UserSecretsId>2b4c6cd7-1395-4fc8-8621-442fa15e57f9</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <ApplicationIcon>wwwroot\favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Buildersoft.Andy.X.Agents" Version="1.0.20.72" />
+    <PackageReference Include="Buildersoft.Andy.X.Agents" Version="1.1.20.75" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="3.1.6" />
     <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="1.3.5" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Buildersoft.Andy.X.Storage.Data.Model\Buildersoft.Andy.X.Storage.Data.Model.csproj" />
-    <ProjectReference Include="..\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.FileConfig.csproj" />
+    <ProjectReference Include="..\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.IO.csproj" />
     <ProjectReference Include="..\Buildersoft.Andy.X.Storage.Logic\Buildersoft.Andy.X.Storage.Logic.csproj" />
     <ProjectReference Include="..\Buildersoft.Andy.X.Storage.Utilities\Buildersoft.Andy.X.Storage.Utilities.csproj" />
   </ItemGroup>

@@ -8,7 +8,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 
-namespace Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants
+namespace Buildersoft.Andy.X.Storage.IO.Storage.Tenants
 {
     public static class TenantConfigFile
     {
@@ -26,7 +26,10 @@ namespace Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants
             if (!File.Exists(filePath))
                 return new ConcurrentDictionary<string, Tenant>();
 
-            return File.ReadAllText(filePath).JsonToObject<ConcurrentDictionary<string, Tenant>>();
+            var tenants = File.ReadAllText(filePath).JsonToObject<ConcurrentDictionary<string, Tenant>>();
+            UpdateSchemaInTenantsList(tenants, rootPath);
+
+            return tenants;
         }
 
         public static bool UpdateTenants(ConcurrentDictionary<string, Tenant> tenants)
@@ -98,6 +101,7 @@ namespace Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants
             }
             return componentLocation;
         }
+
         public static string CreateBookLocation(string tenantName, string productName, string componentName, string bookName, string currentFragmentId = "000000")
         {
             string rootPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Storage", "Tenants", tenantName, productName, componentName);
@@ -111,24 +115,61 @@ namespace Buildersoft.Andy.X.Storage.FileConfig.Storage.Tenants
             if (!Directory.Exists(bookLocation))
             {
                 Directory.CreateDirectory(bookLocation);
-                Directory.CreateDirectory(Path.Combine(bookLocation, $"Messages_{currentFragmentId}"));
-                Directory.CreateDirectory(Path.Combine(bookLocation, $"Keys_{currentFragmentId}"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Messages"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Messages", $"{currentFragmentId}"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Keys"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Keys", $"{currentFragmentId}"));
                 Directory.CreateDirectory(Path.Combine(bookLocation, "Readers"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Schemas"));
 
                 return bookLocation;
             }
 
-            if (!Directory.Exists(Path.Combine(bookLocation, $"Messages_{currentFragmentId}")))
+            if (!Directory.Exists(Path.Combine(bookLocation, "Messages", $"{currentFragmentId}")))
             {
-                Directory.CreateDirectory(Path.Combine(bookLocation, $"Messages_{currentFragmentId}"));
-                Directory.CreateDirectory(Path.Combine(bookLocation, $"Keys_{currentFragmentId}"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Messages", $"{currentFragmentId}"));
+                Directory.CreateDirectory(Path.Combine(bookLocation, "Keys", $"{currentFragmentId}"));
             }
 
             return bookLocation;
         }
+        public static string CreateSchemaFile(string bookLocation, string fileName, string schemaRawData)
+        {
+            string schemaDirLocation = Path.Combine(bookLocation, "Schemas");
+            if (!Directory.Exists(schemaDirLocation))
+            {
+                Directory.CreateDirectory(schemaDirLocation);
+            }
+
+            var schemaLocation = Path.Combine(schemaDirLocation, fileName);
+            File.WriteAllText(schemaLocation, schemaRawData);
+
+            return schemaLocation;
+
+        }
         public static void RenameStorageDirectory(string location, string suffix)
         {
             Directory.Move(location, $"{location}_{suffix}");
+        }
+
+        private static void UpdateSchemaInTenantsList(ConcurrentDictionary<string, Tenant> tenants, string rootPath)
+        {
+            string tenantRootPath = Path.Combine(rootPath, "Storage", "Tenants");
+            foreach (var tenant in tenants)
+            {
+                foreach (var product in tenant.Value.Products)
+                {
+                    foreach (var component in product.Value.Components)
+                    {
+                        foreach (var book in component.Value.Books)
+                        {
+                            string schemaFileLocation = Path.Combine(tenantRootPath, tenant.Key, product.Key, component.Key, book.Key, "Schemas", $"{book.Value.Schema.Name}-{book.Value.Schema.Version}.andyxschema");
+                            if (File.Exists(schemaFileLocation))
+                                book.Value.Schema.SchemaRawData = File.ReadAllText(schemaFileLocation);
+                        }
+                    }
+                }
+            }
         }
     }
 }

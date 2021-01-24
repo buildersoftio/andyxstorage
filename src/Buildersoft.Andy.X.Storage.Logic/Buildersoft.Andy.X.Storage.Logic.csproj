@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>1.0.20.74</Version>
+    <Version>1.1.20.75</Version>
     <Company>Buildersoft</Company>
     <Product>Buildersoft Andy</Product>
     <Authors>Buildersoft</Authors>
     <Description>Buildersoft Andy X is a distributed messaging system. This system will empower developers to move into Event Driven Systems. Andy X is a multi-tenant system.</Description>
-    <Copyright>Copyright © Buildersoft 2020</Copyright>
+    <Copyright>Copyright © Buildersoft 2021</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Buildersoft.Andy.X.Storage.Data.Model\Buildersoft.Andy.X.Storage.Data.Model.csproj" />
-    <ProjectReference Include="..\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.FileConfig.csproj" />
+    <ProjectReference Include="..\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.IO.csproj" />
   </ItemGroup>
 
 </Project>
