@@ -8,7 +8,7 @@ WORKDIR /src
 COPY ["src/Buildersoft.Andy.X.Storage/Buildersoft.Andy.X.Storage.csproj", "src/Buildersoft.Andy.X.Storage/"]
 COPY ["src/Buildersoft.Andy.X.Storage.Logic/Buildersoft.Andy.X.Storage.Logic.csproj", "src/Buildersoft.Andy.X.Storage.Logic/"]
 COPY ["src/Buildersoft.Andy.X.Storage.Data.Model/Buildersoft.Andy.X.Storage.Data.Model.csproj", "src/Buildersoft.Andy.X.Storage.Data.Model/"]
-COPY ["src/Buildersoft.Andy.X.Storage.FileConfig/Buildersoft.Andy.X.Storage.FileConfig.csproj", "src/Buildersoft.Andy.X.Storage.FileConfig/"]
+COPY ["src/Buildersoft.Andy.X.Storage.FileConfig/Buildersoft.Andy.X.Storage.IO.csproj", "src/Buildersoft.Andy.X.Storage.FileConfig/"]
 COPY ["src/Buildersoft.Andy.X.Storage.Utilities/Buildersoft.Andy.X.Storage.Utilities.csproj", "src/Buildersoft.Andy.X.Storage.Utilities/"]
 RUN dotnet restore "src/Buildersoft.Andy.X.Storage/Buildersoft.Andy.X.Storage.csproj"
 COPY . .
