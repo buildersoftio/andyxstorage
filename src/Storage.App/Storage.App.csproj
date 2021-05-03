@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Storage.Core\Storage.Core.csproj" />
+    <ProjectReference Include="..\Storage.Model\Storage.Model.csproj" />
   </ItemGroup>
 
 </Project>

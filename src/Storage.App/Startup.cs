@@ -31,6 +31,8 @@ namespace Buildersoft.Andy.X.Storage.App
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Storage.App", Version = "v1" });
             });
 
+            // Load configuration
+            services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
             services.AddSingleton<SystemService>();
         }
