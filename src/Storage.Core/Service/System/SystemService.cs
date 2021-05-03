@@ -1,6 +1,6 @@
-﻿using Buildersoft.Andy.X.Storage.Model.Configuration;
+﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Microsoft.Extensions.Logging;
-using Storage.IO.Locations;
 using System;
 using System.Collections.Generic;
 using System.IO;
