@@ -13,6 +13,7 @@ namespace Buildersoft.Andy.X.Storage.Data.Model
         public AndyXProperty()
         {
             Name = "";
+
         }
     }
 }
