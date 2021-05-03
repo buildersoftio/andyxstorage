@@ -1,19 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>Buildersoft.Andy.X.Storage.Model</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Folder Include="Events\Components\" />
-    <Folder Include="Events\Consumers\" />
-    <Folder Include="Events\Connections\" />
-    <Folder Include="Events\Messages\" />
-    <Folder Include="Events\Producers\" />
-    <Folder Include="Events\Topics\" />
-    <Folder Include="Events\Products\" />
-    <Folder Include="Events\Tenants\" />
-  </ItemGroup>
 
 </Project>

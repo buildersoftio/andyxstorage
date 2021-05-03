@@ -1,14 +1,15 @@
 ﻿using System;
 
-namespace Buildersoft.Andy.X.Storage.Data.Model.Events.Components
+namespace Buildersoft.Andy.X.Storage.Model.Events.Components
 {
-    public class ComponentCreatedArgs
+    public class ComponentUpdatedArgs
     {
         public Guid ComponentId { get; set; }
         public string TenantName { get; set; }
         public string ProductName { get; set; }
         public string ComponentName { get; set; }
-        public string ComponentDescription { get; set; }
+
+        // Only status can change
         public bool ComponentStatus { get; set; }
     }
 }
