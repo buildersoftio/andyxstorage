@@ -12,7 +12,6 @@ namespace Buildersoft.Andy.X.Storage.Model.Shared.Components
         public ConcurrentDictionary<string, Topic> Topics { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
-        public string Location { get; set; }
 
         public Component()
         {

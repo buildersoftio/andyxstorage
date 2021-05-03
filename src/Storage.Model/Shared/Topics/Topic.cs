@@ -21,7 +21,11 @@ namespace Buildersoft.Andy.X.Storage.Model.Shared.Topics
 
         public Topic()
         {
+            Messages = new ConcurrentDictionary<string, Message>();
+            Producers = new ConcurrentDictionary<string, Producer>();
+            Consumers = new ConcurrentDictionary<string, Consumer>();
 
+            Schema = new Schema();
         }
     }
 
