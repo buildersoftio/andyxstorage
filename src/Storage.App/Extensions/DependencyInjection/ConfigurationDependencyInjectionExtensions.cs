@@ -13,6 +13,7 @@ namespace Buildersoft.Andy.X.Storage.App.Extensions.DependencyInjection
             services.BindDataStorageConfiguration(configuration);
             services.BindAgentConfiguration(configuration);
             services.BindPartitionConfiguration(configuration);
+            services.BindCredentialsConfiguration(configuration);
         }
 
         private static void BindXNodeConfiguration(this IServiceCollection services, IConfiguration configuration)
@@ -41,6 +42,13 @@ namespace Buildersoft.Andy.X.Storage.App.Extensions.DependencyInjection
             var partitionConfiguration = new PartitionConfiguration();
             configuration.Bind("Partition", partitionConfiguration);
             services.AddSingleton(partitionConfiguration);
+        }
+
+        private static void BindCredentialsConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var credentialsConfiguration = new CredentialsConfiguration();
+            configuration.Bind("Credentials", credentialsConfiguration);
+            services.AddSingleton(credentialsConfiguration);
         }
     }
 }
