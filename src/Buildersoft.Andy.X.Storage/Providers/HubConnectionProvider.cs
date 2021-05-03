@@ -4,11 +4,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.Providers
 {

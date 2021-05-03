@@ -1,17 +1,20 @@
-﻿using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Buildersoft.Andy.X.Storage.Data.Model;
+using Buildersoft.Andy.X.Storage.IO.Configurations;
+using Buildersoft.Andy.X.Storage.IO.Storage.Tenants;
+using Microsoft.Extensions.Logging;
 
 namespace Buildersoft.Andy.X.Storage.Services.Handlers
 {
     public class StorageEventHandler
     {
+        private readonly ILogger<StorageEventHandler> _logger;
         private readonly NodeDataStorageService _service;
-        public StorageEventHandler(NodeDataStorageService service)
+        private readonly DataStorage _dataStorage;
+        public StorageEventHandler(ILogger<StorageEventHandler> logger, NodeDataStorageService service)
         {
+            _logger = logger;
             _service = service;
+            _dataStorage = ConfigFile.GetDataStorageSettings();
             InitializeEvents();
         }
 
@@ -23,14 +26,15 @@ namespace Buildersoft.Andy.X.Storage.Services.Handlers
 
         private void DataStorageService_DataStorageDisconnected(Data.Model.Events.DataStorageDisconnectedArgs obj)
         {
-            Console.WriteLine("Client Disconnected :" + obj.Id);
+            _logger.LogWarning($"andyx-storage://{_dataStorage.DataStorageName}?terminalId={obj.Id}: disconnected");
         }
 
         private async void DataStorageService_DataStorageConnected(Data.Model.Events.DataStorageConnectedArgs obj)
         {
-            Console.WriteLine("Client Connected :" + obj.Id);
+            _logger.LogInformation($"andyx-storage://{_dataStorage.DataStorageName}?terminalId={obj.Id}: connected");
+
             // Sendback to Andy X, Tenants with their own properties
-           await _service.SendStorageCurrentState(TenantConfigFile.GetTenants());
+            await _service.SendStorageCurrentState(TenantConfigFile.GetTenants());
         }
     }
 }

@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Buildersoft.Andy.X.Storage.Extensions
+namespace Buildersoft.Andy.X.Storage.Extensions.DependencyInjection
 {
-    public static class Swagger
+    public static class SwaggerDependencyInjectionExtensions
     {
         public static IServiceCollection AddSwagger(this IServiceCollection services)
         {

@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Buildersoft.Andy.X.Storage.Data.Model;
-using Buildersoft.Andy.X.Storage.Extensions;
+using Buildersoft.Andy.X.Storage.Extensions.DependencyInjection;
 using Buildersoft.Andy.X.Storage.IO.Configurations;
 using Buildersoft.Andy.X.Storage.Logic.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -56,7 +53,7 @@ namespace Buildersoft.Andy.X.Storage.Controllers
             // TODO... Connect to Andy X, try a Ping.
             if (_connectionService.ConnectToAndyX(andyX))
             {
-                SignalR.InitializeSignalREventHandlers(null, _serviceProvider);
+                CoreServiceDependencyInjectionExtensions.InitializeSignalREventHandlers(null, _serviceProvider);
             }
 
             return Ok("Linked");

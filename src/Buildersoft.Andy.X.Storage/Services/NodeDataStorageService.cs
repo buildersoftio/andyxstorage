@@ -1,6 +1,5 @@
 ﻿using Buildersoft.Andy.X.Agents;
 using Buildersoft.Andy.X.Agents.Models;
-using Buildersoft.Andy.X.Storage.Data.Model;
 using Buildersoft.Andy.X.Storage.Data.Model.Events;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Books;
 using Buildersoft.Andy.X.Storage.Data.Model.Events.Books.Schemas;
@@ -15,10 +14,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace Buildersoft.Andy.X.Storage.Services
 {

@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
 
-namespace Buildersoft.Andy.X.Storage.Extensions
+namespace Buildersoft.Andy.X.Storage.Extensions.DependencyInjection
 {
-    public static class HttpHandler
+    public static class HttpHandlerDependencyInjectionExtensions
     {
         public static IServiceCollection AddHttpClientHandler(this IServiceCollection services)
         {

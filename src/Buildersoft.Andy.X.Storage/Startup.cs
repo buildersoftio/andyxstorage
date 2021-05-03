@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Buildersoft.Andy.X.Storage.Extensions;
+using Buildersoft.Andy.X.Storage.Extensions.DependencyInjection;
 using Buildersoft.Andy.X.Storage.Logic.Services;
 using Buildersoft.Andy.X.Storage.Providers;
 using Buildersoft.Andy.X.Storage.Services;
@@ -11,13 +8,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace Buildersoft.Andy.X.Storage
 {
@@ -38,6 +34,8 @@ namespace Buildersoft.Andy.X.Storage
                 {
                     opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
+
+            services.AddSerilogLoggingConfiguration(Configuration);
 
             // Add Health Checks
             services.AddHealthChecks();
@@ -63,7 +61,7 @@ namespace Buildersoft.Andy.X.Storage
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider serviceProvider, ILoggerFactory loggerfactory)
         {
             if (env.IsDevelopment())
             {
@@ -72,8 +70,10 @@ namespace Buildersoft.Andy.X.Storage
             }
 
             app.InitializeSignalREventHandlers(serviceProvider);
-           
+
             app.UseHttpReqResLogging();
+
+            loggerfactory.AddSerilog();
 
             app.UseStaticFiles();
             app.UseHttpsRedirection();

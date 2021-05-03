@@ -1,6 +1,4 @@
-﻿using Buildersoft.Andy.X.Storage.Data.Model;
-using Buildersoft.Andy.X.Storage.Data.Model.Products;
-using Buildersoft.Andy.X.Storage.IO.Configurations;
+﻿using Buildersoft.Andy.X.Storage.IO.Configurations;
 using Buildersoft.Andy.X.Storage.Logic.Repositories;
 using Buildersoft.Andy.X.Storage.Logic.Repositories.Interfaces;
 using Buildersoft.Andy.X.Storage.Logic.Services;
@@ -11,13 +9,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Buildersoft.Andy.X.Storage.Extensions
+namespace Buildersoft.Andy.X.Storage.Extensions.DependencyInjection
 {
-    public static class SignalR
+    public static class CoreServiceDependencyInjectionExtensions
     {
         public static IServiceCollection AddSignalREventHandlers(this IServiceCollection services)
         {
