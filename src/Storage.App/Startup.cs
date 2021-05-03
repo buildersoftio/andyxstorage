@@ -7,6 +7,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Storage.Core.Service.System;
+using System;
 
 namespace Buildersoft.Andy.X.Storage.App
 {
@@ -30,10 +32,11 @@ namespace Buildersoft.Andy.X.Storage.App
             });
 
             services.AddSerilogLoggingConfiguration(Configuration);
+            services.AddSingleton<SystemService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerfactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerfactory, IServiceProvider provider)
         {
             if (env.IsDevelopment())
             {
@@ -43,6 +46,8 @@ namespace Buildersoft.Andy.X.Storage.App
             }
 
             loggerfactory.AddSerilog();
+
+            app.StartServices(provider);
 
             app.UseHttpsRedirection();
             app.UseRouting();

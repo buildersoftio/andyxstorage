@@ -20,4 +20,8 @@
     <Folder Include="Controllers\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Storage.Core\Storage.Core.csproj" />
+  </ItemGroup>
+
 </Project>
