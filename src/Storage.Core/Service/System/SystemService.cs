@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Storage.Core.Service.System
+namespace Buildersoft.Andy.X.Storage.Core.Service.System
 {
     public class SystemService
     {
