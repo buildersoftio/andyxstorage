@@ -11,4 +11,9 @@
     <Copyright>Copyright © Buildersoft 2021</Copyright>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Storage.Model\Storage.Model.csproj" />
+    <ProjectReference Include="..\Storage.Utility\Storage.Utility.csproj" />
+  </ItemGroup>
+
 </Project>

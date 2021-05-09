@@ -1,4 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using Buildersoft.Andy.X.Storage.IO.Readers;
+using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -30,7 +32,54 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             credentials = _serviceProvider.GetService(typeof(CredentialsConfiguration)) as CredentialsConfiguration;
 
             DoFileConfiguration();
+
+            UpdateXNodesConfiguration();
+            UpdateDataStorageConfiguration();
+            UpdateCredentials();
+
             InitializeServices();
+        }
+
+        private void UpdateXNodesConfiguration()
+        {
+            List<XNodeConfiguration> xNodes = nodes;
+            if (File.Exists(SystemLocations.GetNodesConfigFile()))
+            {
+                xNodes = SystemConfigurationReader.ReadXNodesConfigurationFromFile();
+                foreach (var node in nodes)
+                {
+                    var nodeExists = xNodes.Exists(x => x.ServiceUrl == node.ServiceUrl);
+                    if (nodeExists != true)
+                        xNodes.Add(node);
+                }
+            }
+            SystemConfigurationWriter.WriteXNodesConfigurationFromFile(xNodes);
+        }
+
+        private void UpdateDataStorageConfiguration()
+        {
+            DataStorageConfiguration newConfig = dataStorage;
+            if (File.Exists(SystemLocations.GetStorageCredentialsConfigFile()))
+            {
+                var actualConfig = SystemConfigurationReader.ReadStorageConfigurationFromFile();
+                if (newConfig.Name != actualConfig.Name || newConfig.Status != actualConfig.Status)
+                    SystemConfigurationWriter.WriteStorageConfigurationFromFile(newConfig);
+            }
+            else
+                SystemConfigurationWriter.WriteStorageConfigurationFromFile(newConfig);
+        }
+
+        private void UpdateCredentials()
+        {
+            CredentialsConfiguration newConfig = credentials;
+            if (File.Exists(SystemLocations.GetCredentialsConfigFile()))
+            {
+                var actualConfig = SystemConfigurationReader.ReadCredentialsConfigurationFromFile();
+                if (newConfig.Username != actualConfig.Username || newConfig.Password != actualConfig.Password)
+                    SystemConfigurationWriter.WriteCredentialsConfigurationFromFile(newConfig);
+            }
+            else
+                SystemConfigurationWriter.WriteCredentialsConfigurationFromFile(newConfig);
         }
 
         private void DoFileConfiguration()
@@ -46,7 +95,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
 
         private void InitializeServices()
         {
-
             _logger.LogInformation("Buildersoft");
             _logger.LogInformation("Welcome to Andy X DataStorage");
 

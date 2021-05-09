@@ -59,6 +59,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
             return Path.Combine(GetConfigCredentialsDirectory(), "default-user.andx");
         }
 
+        public static string GetStorageCredentialsConfigFile()
+        {
+            return Path.Combine(GetConfigCredentialsDirectory(), "storage-user.andx");
+        }
+
         #endregion
     }
 }
