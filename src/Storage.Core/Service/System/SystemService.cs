@@ -96,12 +96,12 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private void InitializeServices()
         {
             _logger.LogInformation("Welcome");
-            _logger.LogInformation("Andy X Data-Storage");
+            _logger.LogInformation("Andy X Data Storage");
 
-            _logger.LogInformation("andyx-storage - connecting to andy x node");
+            _logger.LogInformation("andyx-storage#connecting-to-andy-x-node");
 
-            _logger.LogInformation("andyx-storage - starting services");
-            _logger.LogInformation("andyx-storage - starting agents");
+            _logger.LogInformation("andyx-storage#starting-services");
+            _logger.LogInformation("andyx-storage#starting-agents");
         }
     }
 }
