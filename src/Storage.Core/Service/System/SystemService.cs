@@ -95,8 +95,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
 
         private void InitializeServices()
         {
-            _logger.LogInformation("Buildersoft");
-            _logger.LogInformation("Welcome to Andy X DataStorage");
+            _logger.LogInformation("Welcome");
+            _logger.LogInformation("Andy X Data-Storage");
 
             _logger.LogInformation("andyx-storage - connecting to andy x node");
 
