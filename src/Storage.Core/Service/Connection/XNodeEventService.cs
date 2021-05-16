@@ -1,8 +1,9 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
 using Buildersoft.Andy.X.Storage.Core.Provider;
+using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
+using Buildersoft.Andy.X.Storage.Model.Events.Agents;
 using Buildersoft.Andy.X.Storage.Model.Events.Components;
-using Buildersoft.Andy.X.Storage.Model.Events.Connections;
 using Buildersoft.Andy.X.Storage.Model.Events.Consumers;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Events.Producers;
@@ -18,13 +19,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
 {
     public class XNodeEventService
     {
-        private readonly ILogger<XNodeEventService> logger;
+        private readonly ILogger<SystemService> logger;
         private readonly IXNodeConnectionRepository xNodeConnectionRepository;
 
         private HubConnection _connection;
 
-        public event Action<DataStorageConnectedArgs> DataStorageConnected;
-        public event Action<DataStorageDisconnectedArgs> DataStorageDisconnected;
+        public event Action<AgentConnectedArgs> StorageConnected;
+        public event Action<AgentDisconnectedArgs> StorageDisconnected;
 
         public event Action<TenantCreatedArgs> TenantCreated;
         public event Action<TenantUpdatedArgs> TenantUpdated;
@@ -47,20 +48,24 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
         public event Action<ConsumerConnectedArgs> ConsumerConnected;
         public event Action<ConsumerDisconnectedArgs> ConsumerDisconnected;
 
-        public XNodeEventService(ILogger<XNodeEventService> logger,
+        private string agentId;
+
+        public XNodeEventService(ILogger<SystemService> logger,
             string agentId,
             XNodeConfiguration nodeConfig,
             DataStorageConfiguration dataStorageConfig,
+            AgentConfiguration agentConfiguration,
             IXNodeConnectionRepository xNodeConnectionRepository)
         {
             this.logger = logger;
             this.xNodeConnectionRepository = xNodeConnectionRepository;
+            this.agentId = agentId;
 
-            var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentId);
+            var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
             _connection = provider.GetHubConnection();
 
-            _connection.On<DataStorageConnectedArgs>("DataStorageConnected", connectedArgs => DataStorageConnected?.Invoke(connectedArgs));
-            _connection.On<DataStorageDisconnectedArgs>("DataStorageDisconnected", disconnectedArgs => DataStorageDisconnected?.Invoke(disconnectedArgs));
+            _connection.On<AgentConnectedArgs>("StorageConnected", connectedArgs => StorageConnected?.Invoke(connectedArgs));
+            _connection.On<AgentDisconnectedArgs>("StorageDisconnected", disconnectedArgs => StorageDisconnected?.Invoke(disconnectedArgs));
 
             _connection.On<TenantCreatedArgs>("TenantCreated", tenantCreated => TenantCreated?.Invoke(tenantCreated));
             _connection.On<TenantUpdatedArgs>("TenantUpdated", tenantUpdated => TenantUpdated?.Invoke(tenantUpdated));
@@ -94,6 +99,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
                     logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}");
                 }
             });
+
+            logger.LogInformation($"ANDYX-STORAGE#AGENT|STARTING|{agentId}|CONNECTED");
         }
     }
 }

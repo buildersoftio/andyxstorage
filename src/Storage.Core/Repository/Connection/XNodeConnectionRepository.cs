@@ -17,7 +17,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Repository.Connection
         public void AddService(string key, XNodeEventService service)
         {
             if (agents.TryAdd(key, service))
-                logger.LogInformation($"Agent with id [{key}] stored");
+                logger.LogInformation($"ANDYX-STORAGE#AGENT|{key}|STORED");
         }
 
         public XNodeEventService GetService(string key)

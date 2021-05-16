@@ -9,17 +9,20 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
     {
         private readonly XNodeConfiguration nodeConfig;
         private readonly DataStorageConfiguration dataStorageConfig;
-        private readonly string agentIdConnection;
+        private readonly AgentConfiguration agentConfiguration;
+        private readonly string agentId;
 
         private HubConnection _connection;
 
         public XNodeConnectionProvider(XNodeConfiguration nodeConfig,
             DataStorageConfiguration dataStorageConfig,
-            string agentIdConnection)
+            AgentConfiguration agentConfiguration, 
+            string agentId)
         {
             this.nodeConfig = nodeConfig;
             this.dataStorageConfig = dataStorageConfig;
-            this.agentIdConnection = agentIdConnection;
+            this.agentConfiguration = agentConfiguration;
+            this.agentId = agentId;
             ConnectToXNode();
         }
 
@@ -31,16 +34,23 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
         private void BuildConnectionWithAgent(XNodeConfiguration nodeConfig)
         {
             string serviceUrl = CheckAndFixServiceUrl(nodeConfig.ServiceUrl);
+            string location = $"{serviceUrl}/realtime/v2/storage";
             _connection = new HubConnectionBuilder()
                 .AddJsonProtocol(opts =>
                 {
                     opts.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 })
-                .WithUrl($"{serviceUrl}/realtime/v2/datastorage", option =>
+                .WithUrl($"{serviceUrl}/realtime/v2/storage", option =>
                 {
-                    option.Headers["Authorization"] = $"Bearer {nodeConfig.JwtToken}";
-                    option.Headers["x-andy-storage-name"] = dataStorageConfig.Name;
-                    option.Headers["x-andy-storage-agent"] = agentIdConnection;
+                    // TODO: Implement Authorization
+                    // option.Headers["Authorization"] = $"Bearer {nodeConfig.JwtToken}";
+
+                    option.Headers["x-andyx-storage-name"] = dataStorageConfig.Name;
+                    option.Headers["x-andyx-storage-status"] = dataStorageConfig.Status.ToString();
+                    option.Headers["x-andyx-storage-agent-id"] = agentId;
+                    option.Headers["x-andyx-storage-agent-max"] = agentConfiguration.MaxNumber.ToString();
+                    option.Headers["x-andyx-storage-agent-min"] = agentConfiguration.MinNumber.ToString();
+                    option.Headers["x-andyx-storage-agent-loadbalanced"] = agentConfiguration.LoadBalanced.ToString();
                 })
                 .WithAutomaticReconnect()
                 .Build();
@@ -49,7 +59,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
         private string CheckAndFixServiceUrl(string serviceUrl)
         {
             if (serviceUrl.EndsWith("/"))
-                return serviceUrl.Remove(serviceUrl.Length - 1);
+                serviceUrl = serviceUrl.Remove(serviceUrl.Length - 1);
+            if (serviceUrl.StartsWith("http") != true)
+                serviceUrl = $"https://{serviceUrl}";
 
             return serviceUrl;
         }

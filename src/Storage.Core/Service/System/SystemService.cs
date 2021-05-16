@@ -1,4 +1,6 @@
-﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
+using Buildersoft.Andy.X.Storage.Core.Service.Connection;
+using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
@@ -13,6 +15,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
     {
         private readonly ILogger<SystemService> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IXNodeConnectionRepository _xNodeConnectionRepository;
 
         private readonly List<XNodeConfiguration> nodes;
         private readonly DataStorageConfiguration dataStorage;
@@ -20,16 +23,20 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly PartitionConfiguration partition;
         private readonly CredentialsConfiguration credentials;
 
-        public SystemService(ILogger<SystemService> logger, IServiceProvider serviceProvider)
+
+        public SystemService(ILogger<SystemService> logger, IServiceProvider serviceProvider, IXNodeConnectionRepository xNodeConnectionRepository)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
+
+            _xNodeConnectionRepository = xNodeConnectionRepository;
 
             nodes = _serviceProvider.GetService(typeof(List<XNodeConfiguration>)) as List<XNodeConfiguration>;
             dataStorage = _serviceProvider.GetService(typeof(DataStorageConfiguration)) as DataStorageConfiguration;
             agent = _serviceProvider.GetService(typeof(AgentConfiguration)) as AgentConfiguration;
             partition = _serviceProvider.GetService(typeof(PartitionConfiguration)) as PartitionConfiguration;
             credentials = _serviceProvider.GetService(typeof(CredentialsConfiguration)) as CredentialsConfiguration;
+
 
             DoFileConfiguration();
 
@@ -86,22 +93,36 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         {
             if (Directory.Exists(SystemLocations.GetDataDirectory()))
                 return;
-
-            _logger.LogInformation("Configuring Andy X DataStorage");
-            _logger.LogWarning($"If this process failes make sure that this user have access to write in this location {SystemLocations.GetRootDirectory()}");
+            _logger.LogInformation("ANDYX-STORAGE#CONFIGURING");
+            _logger.LogInformation($"ANDYX-STORAGE#CONFIGURING|If this process failes make sure that this user have access to write in this location {SystemLocations.GetRootDirectory()}");
 
             SystemIOService.CreateConfigDirectories();
         }
 
         private void InitializeServices()
         {
-            _logger.LogInformation("Welcome");
-            _logger.LogInformation("Andy X Data Storage");
+            _logger.LogInformation("ANDYX-STORAGE");
+            _logger.LogInformation("ANDYX-STORAGE#WELCOME");
 
-            _logger.LogInformation("andyx-storage#connecting-to-andy-x-node");
+            _logger.LogInformation("ANDYX-STORAGE#SERVICES|STARTING");
+            _logger.LogInformation("ANDYX-STORAGE#AGENTS|STARTING");
 
-            _logger.LogInformation("andyx-storage#starting-services");
-            _logger.LogInformation("andyx-storage#starting-agents");
+            foreach (var xnode in nodes)
+            {
+                if (agent.LoadBalanced == false)
+                {
+                    for (int i = 0; i < agent.MaxNumber; i++)
+                    {
+                        string agentId = Guid.NewGuid().ToString();
+                        _logger.LogInformation($"ANDYX-STORAGE#AGENT|STARTING|{agentId}|CONNECTING");
+                        var nodeEventsService = new XNodeEventService(_logger, agentId, xnode, dataStorage, agent, _xNodeConnectionRepository);
+                    }
+                }
+                else
+                {
+                    _logger.LogError($"ANDYX-STORAGE#AGENT|STARTING|LoadBalanced EQ true|UNSUPPORTED");
+                }
+            }
         }
     }
 }

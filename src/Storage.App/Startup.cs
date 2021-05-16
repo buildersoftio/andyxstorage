@@ -1,5 +1,4 @@
 using Buildersoft.Andy.X.Storage.App.Extensions.DependencyInjection;
-using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -34,7 +33,10 @@ namespace Buildersoft.Andy.X.Storage.App
             // Load configuration
             services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
-            services.AddSingleton<SystemService>();
+            services.AddNodeServiceRepository();
+
+            services.AddStartService();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
