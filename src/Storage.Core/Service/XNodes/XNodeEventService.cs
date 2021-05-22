@@ -1,6 +1,7 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
 using Buildersoft.Andy.X.Storage.Core.Provider;
 using Buildersoft.Andy.X.Storage.Core.Service.System;
+using Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Events.Agents;
 using Buildersoft.Andy.X.Storage.Model.Events.Components;
@@ -15,7 +16,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
+namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 {
     public class XNodeEventService
     {
@@ -47,6 +48,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
 
         public event Action<ConsumerConnectedArgs> ConsumerConnected;
         public event Action<ConsumerDisconnectedArgs> ConsumerDisconnected;
+
+
+        private AgentEventHandler AgentEvnetHandler;
 
         private string agentId;
 
@@ -85,9 +89,16 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
             _connection.On<ConsumerConnectedArgs>("ConsumerConnected", consumerConnected => ConsumerConnected?.Invoke(consumerConnected));
             _connection.On<ConsumerDisconnectedArgs>("ConsumerDisconnected", consumerDisconnected => ConsumerDisconnected?.Invoke(consumerDisconnected));
 
+            InitializeEventHandlers();
+
             ConnectAsync();
 
             xNodeConnectionRepository.AddService(agentId, this);
+        }
+
+        private void InitializeEventHandlers()
+        {
+            AgentEvnetHandler = new AgentEventHandler(logger, this);
         }
 
         public async void ConnectAsync()
@@ -99,8 +110,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.Connection
                     logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}");
                 }
             });
-
-            logger.LogInformation($"ANDYX-STORAGE#AGENT|STARTING|{agentId}|CONNECTED");
         }
     }
 }

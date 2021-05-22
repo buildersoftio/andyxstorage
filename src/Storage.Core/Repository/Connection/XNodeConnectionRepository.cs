@@ -1,5 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
-using Buildersoft.Andy.X.Storage.Core.Service.Connection;
+using Buildersoft.Andy.X.Storage.Core.Service.XNodes;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 

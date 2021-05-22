@@ -1,7 +1,8 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
-using Buildersoft.Andy.X.Storage.Core.Service.Connection;
+using Buildersoft.Andy.X.Storage.Core.Service.XNodes;
 using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.IO.Readers;
+using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Microsoft.Extensions.Logging;
@@ -114,7 +115,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                     for (int i = 0; i < agent.MaxNumber; i++)
                     {
                         string agentId = Guid.NewGuid().ToString();
-                        _logger.LogInformation($"ANDYX-STORAGE#AGENT|STARTING|{agentId}|CONNECTING");
+                        _logger.LogInformation($"ANDYX-STORAGE#AGENT|{agentId}|CONNECTING");
                         var nodeEventsService = new XNodeEventService(_logger, agentId, xnode, dataStorage, agent, _xNodeConnectionRepository);
                     }
                 }

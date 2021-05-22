@@ -41,6 +41,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
         {
             return Path.Combine(GetRootDirectory(), "data", "storage");
         }
+
+        public static string GetTenantRootDirectory()
+        {
+            return Path.Combine(SystemLocations.GetStorageDirectory(), "tenants");
+        }
         #endregion
 
         #region Configuration Files

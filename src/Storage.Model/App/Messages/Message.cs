@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Buildersoft.Andy.X.Storage.Model.Shared.Messages
+namespace Buildersoft.Andy.X.Storage.Model.App.Messages
 {
     public class Message
     {

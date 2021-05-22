@@ -1,17 +1,14 @@
-﻿using Buildersoft.Andy.X.Storage.Model.Shared.Components;
+﻿using Buildersoft.Andy.X.Storage.Model.App.Components;
 using System;
 using System.Collections.Concurrent;
 
-namespace Buildersoft.Andy.X.Storage.Model.Shared.Products
+namespace Buildersoft.Andy.X.Storage.Model.App.Products
 {
     public class Product
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public bool Status { get; set; }
         public ConcurrentDictionary<string, Component> Components { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime ModifiedDate { get; set; }
 
         public Product()
         {

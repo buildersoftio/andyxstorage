@@ -1,4 +1,4 @@
-﻿using Buildersoft.Andy.X.Storage.Model.Shared.Topics;
+﻿using Buildersoft.Andy.X.Storage.Model.App.Topics;
 using System;
 
 namespace Buildersoft.Andy.X.Storage.Model.Events.Topics

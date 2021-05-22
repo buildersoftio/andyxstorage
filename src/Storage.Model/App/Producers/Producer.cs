@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Buildersoft.Andy.X.Storage.Model.Shared.Producers
+namespace Buildersoft.Andy.X.Storage.Model.App.Producers
 {
     public class Producer
     {

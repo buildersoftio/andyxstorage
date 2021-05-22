@@ -1,4 +1,4 @@
-﻿using Buildersoft.Andy.X.Storage.Model.Shared.Tenants;
+﻿using Buildersoft.Andy.X.Storage.Model.App.Tenants;
 using System;
 
 namespace Buildersoft.Andy.X.Storage.Model.Events.Tenants
@@ -7,8 +7,5 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Tenants
     {
         public Guid TenantId { get; set; }
         public string TenantName { get; set; }
-        public bool TenantStatus { get; set; }
-        public Encryption Encryption { get; set; }
-        public Signature Signature { get; set; }
     }
 }

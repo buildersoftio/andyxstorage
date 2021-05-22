@@ -1,6 +1,7 @@
-﻿using System.IO;
+﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using System.IO;
 
-namespace Buildersoft.Andy.X.Storage.IO.Locations
+namespace Buildersoft.Andy.X.Storage.IO.Services
 {
     public static class SystemIOService
     {
@@ -11,6 +12,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
             Directory.CreateDirectory(SystemLocations.GetConfigGeoReplicationDirectory());
             Directory.CreateDirectory(SystemLocations.GetConfigCredentialsDirectory());
             Directory.CreateDirectory(SystemLocations.GetStorageDirectory());
+            Directory.CreateDirectory(SystemLocations.GetTenantRootDirectory());
         }
     }
 }

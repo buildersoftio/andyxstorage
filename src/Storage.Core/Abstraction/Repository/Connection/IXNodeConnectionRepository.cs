@@ -1,4 +1,4 @@
-﻿using Buildersoft.Andy.X.Storage.Core.Service.Connection;
+﻿using Buildersoft.Andy.X.Storage.Core.Service.XNodes;
 
 namespace Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection
 {

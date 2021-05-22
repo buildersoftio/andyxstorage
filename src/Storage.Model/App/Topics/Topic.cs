@@ -1,10 +1,10 @@
-﻿using Buildersoft.Andy.X.Storage.Model.Shared.Consumers;
-using Buildersoft.Andy.X.Storage.Model.Shared.Messages;
-using Buildersoft.Andy.X.Storage.Model.Shared.Producers;
+﻿using Buildersoft.Andy.X.Storage.Model.App.Consumers;
+using Buildersoft.Andy.X.Storage.Model.App.Messages;
+using Buildersoft.Andy.X.Storage.Model.App.Producers;
 using System;
 using System.Collections.Concurrent;
 
-namespace Buildersoft.Andy.X.Storage.Model.Shared.Topics
+namespace Buildersoft.Andy.X.Storage.Model.App.Topics
 {
     public class Topic
     {
