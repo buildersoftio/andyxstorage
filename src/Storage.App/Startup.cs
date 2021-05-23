@@ -34,7 +34,7 @@ namespace Buildersoft.Andy.X.Storage.App
             services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
             services.AddNodeServiceRepository();
-
+            services.AddIOServices();
             services.AddStartService();
 
         }

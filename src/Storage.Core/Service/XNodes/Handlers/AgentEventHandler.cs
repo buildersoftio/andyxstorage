@@ -7,13 +7,14 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
     public class AgentEventHandler
     {
         private readonly XNodeEventService xNodeEventService;
+        private readonly TenantIOService tenantIOService;
         private readonly ILogger<SystemService> logger;
 
-        public AgentEventHandler(ILogger<SystemService> logger, XNodeEventService xNodeEventService)
+        public AgentEventHandler(ILogger<SystemService> logger, XNodeEventService xNodeEventService, TenantIOService tenantIOService)
         {
             this.logger = logger;
             this.xNodeEventService = xNodeEventService;
-
+            this.tenantIOService = tenantIOService;
             InitializeEvents();
         }
 
@@ -29,7 +30,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             foreach (var tenant in obj.Tenants)
             {
-                TenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "DISCONNECTED");
+                tenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "DISCONNECTED");
             }
         }
 
@@ -41,8 +42,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 logger.LogInformation($"ANDYX-STORAGE#AGENT|{obj.AgentId}|TENANTS|tenant/{tenant.Key}|CONNECTED");
 
                 // Trying to create new tenants locations in the storage.
-                TenantIOService.TryCreateTenantDirectory(tenant.Key, tenant.Value);
-                TenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "CONNECTED");
+                tenantIOService.TryCreateTenantDirectory(tenant.Key, tenant.Value);
+                tenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "CONNECTED");
             }
 
         }

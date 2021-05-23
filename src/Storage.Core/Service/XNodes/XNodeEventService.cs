@@ -2,6 +2,7 @@
 using Buildersoft.Andy.X.Storage.Core.Provider;
 using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers;
+using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Events.Agents;
 using Buildersoft.Andy.X.Storage.Model.Events.Components;
@@ -22,7 +23,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
     {
         private readonly ILogger<SystemService> logger;
         private readonly IXNodeConnectionRepository xNodeConnectionRepository;
-
+        private readonly TenantIOService tenantIOService;
         private HubConnection _connection;
 
         public event Action<AgentConnectedArgs> StorageConnected;
@@ -59,10 +60,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             XNodeConfiguration nodeConfig,
             DataStorageConfiguration dataStorageConfig,
             AgentConfiguration agentConfiguration,
-            IXNodeConnectionRepository xNodeConnectionRepository)
+            IXNodeConnectionRepository xNodeConnectionRepository, TenantIOService tenantIOService)
         {
             this.logger = logger;
             this.xNodeConnectionRepository = xNodeConnectionRepository;
+            this.tenantIOService = tenantIOService;
             this.agentId = agentId;
 
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
@@ -98,7 +100,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         private void InitializeEventHandlers()
         {
-            AgentEvnetHandler = new AgentEventHandler(logger, this);
+            AgentEvnetHandler = new AgentEventHandler(logger, this, tenantIOService);
         }
 
         public async void ConnectAsync()

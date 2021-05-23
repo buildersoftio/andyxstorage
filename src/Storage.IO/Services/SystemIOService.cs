@@ -3,9 +3,9 @@ using System.IO;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
-    public static class SystemIOService
+    public class SystemIOService
     {
-        public static void CreateConfigDirectories()
+        public void CreateConfigDirectories()
         {
             Directory.CreateDirectory(SystemLocations.GetDataDirectory());
             Directory.CreateDirectory(SystemLocations.GetConfigNodesDirectory());

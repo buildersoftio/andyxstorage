@@ -17,7 +17,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly ILogger<SystemService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly IXNodeConnectionRepository _xNodeConnectionRepository;
-
+        private readonly SystemIOService _systemIOService;
+        private readonly TenantIOService _tenantIOService;
         private readonly List<XNodeConfiguration> nodes;
         private readonly DataStorageConfiguration dataStorage;
         private readonly AgentConfiguration agent;
@@ -25,13 +26,14 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly CredentialsConfiguration credentials;
 
 
-        public SystemService(ILogger<SystemService> logger, IServiceProvider serviceProvider, IXNodeConnectionRepository xNodeConnectionRepository)
+        public SystemService(ILogger<SystemService> logger, IServiceProvider serviceProvider, IXNodeConnectionRepository xNodeConnectionRepository, SystemIOService systemIOService, TenantIOService tenantIOService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
 
             _xNodeConnectionRepository = xNodeConnectionRepository;
-
+            _systemIOService = systemIOService;
+            _tenantIOService = tenantIOService;
             nodes = _serviceProvider.GetService(typeof(List<XNodeConfiguration>)) as List<XNodeConfiguration>;
             dataStorage = _serviceProvider.GetService(typeof(DataStorageConfiguration)) as DataStorageConfiguration;
             agent = _serviceProvider.GetService(typeof(AgentConfiguration)) as AgentConfiguration;
@@ -97,7 +99,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             _logger.LogInformation("ANDYX-STORAGE#CONFIGURING");
             _logger.LogInformation($"ANDYX-STORAGE#CONFIGURING|If this process failes make sure that this user have access to write in this location {SystemLocations.GetRootDirectory()}");
 
-            SystemIOService.CreateConfigDirectories();
+            _systemIOService.CreateConfigDirectories();
         }
 
         private void InitializeServices()
@@ -116,7 +118,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                     {
                         string agentId = Guid.NewGuid().ToString();
                         _logger.LogInformation($"ANDYX-STORAGE#AGENT|{agentId}|CONNECTING");
-                        var nodeEventsService = new XNodeEventService(_logger, agentId, xnode, dataStorage, agent, _xNodeConnectionRepository);
+                        var nodeEventsService = new XNodeEventService(_logger, agentId, xnode, dataStorage, agent, _xNodeConnectionRepository, _tenantIOService);
                     }
                 }
                 else
