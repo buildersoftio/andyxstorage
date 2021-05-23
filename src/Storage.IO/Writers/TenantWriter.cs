@@ -12,11 +12,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Writers
         {
             try
             {
+                if (File.Exists(TenantLocations.GetTenantConfigFile(tenant.Name)))
+                    File.Delete(TenantLocations.GetTenantConfigFile(tenant.Name));
+
                 File.WriteAllText(TenantLocations.GetTenantConfigFile(tenant.Name), tenant.ToJsonAndEncrypt());
                 return true;
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
+                // TODO: DEBUG, create a QUEUE to write logs, and move away from STATIC Methods.
+                Console.WriteLine($"Writing in TenantFileConfig : error '{ex.Message}'");
                 return false;
             }
         }

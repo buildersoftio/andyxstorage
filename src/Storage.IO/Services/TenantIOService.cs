@@ -12,17 +12,19 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             try
             {
-                if (Directory.Exists(TenantLocations.GetTenantDirectory(tenantName)) != true)
+                if (Directory.Exists(TenantLocations.GetTenantDirectory(tenantName)) == true)
                 {
-                    Directory.CreateDirectory(TenantLocations.GetTenantDirectory(tenantName));
-                    Directory.CreateDirectory(TenantLocations.GetProductRootDirectory(tenantName));
-                    Directory.CreateDirectory(TenantLocations.GetTenantLogsRootDirectory(tenantName));
-
+                    // Update the file from the Server.
                     TenantWriter.WriteTenantConfigFromFile(tenantDetails);
-
-                    return true;
                 }
-                return false;
+
+                Directory.CreateDirectory(TenantLocations.GetTenantDirectory(tenantName));
+                Directory.CreateDirectory(TenantLocations.GetProductRootDirectory(tenantName));
+                Directory.CreateDirectory(TenantLocations.GetTenantLogsRootDirectory(tenantName));
+
+                TenantWriter.WriteTenantConfigFromFile(tenantDetails);
+
+                return true;
             }
             catch (Exception)
             {
