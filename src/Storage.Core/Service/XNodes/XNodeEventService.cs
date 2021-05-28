@@ -51,7 +51,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         public event Action<ConsumerDisconnectedArgs> ConsumerDisconnected;
 
 
-        private AgentEventHandler AgentEvnetHandler;
+        private AgentEventHandler agentEvnetHandler;
+        private TenantEventHandler tenantEventHandler;
 
         private string agentId;
 
@@ -100,7 +101,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         private void InitializeEventHandlers()
         {
-            AgentEvnetHandler = new AgentEventHandler(logger, this, tenantIOService);
+            agentEvnetHandler = new AgentEventHandler(logger, this, tenantIOService);
+            tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
         }
 
         public async void ConnectAsync()
