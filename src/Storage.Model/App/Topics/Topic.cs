@@ -32,20 +32,14 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Topics
     public class Schema
     {
         public string Name { get; set; }
-
-        public bool SchemaValidationStatus { get; set; }
-
-        public string SchemaRawData { get; set; }
+        public bool IsSchemaValidated { get; set; }
+        public string SchemaRaw { get; set; }
         public int Version { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public DateTime ModifiedDate { get; set; }
 
         public Schema()
         {
-            SchemaValidationStatus = false;
-            Version = 1;
-            CreatedDate = DateTime.Now;
-            ModifiedDate = DateTime.Now;
+            Version = 0;
+            IsSchemaValidated = false;
         }
     }
 }
