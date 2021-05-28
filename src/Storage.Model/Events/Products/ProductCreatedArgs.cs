@@ -4,9 +4,8 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Products
 {
     public class ProductCreatedArgs
     {
-        public Guid ProductId { get; set; }
-        public string TenantName { get; set; }
-        public string ProductName { get; set; }
-        public bool ProductStatus { get; set; }
+        public string Tenant { get; set; }
+        public Guid Id { get; set; }
+        public string Name { get; set; }
     }
 }
