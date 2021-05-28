@@ -4,15 +4,17 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers
 {
     public class Consumer
     {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public Subscription Subscription { get; set; }
+        public string Tenant { get; set; }
+        public string Product { get; set; }
+        public string Component { get; set; }
+        public string Topic { get; set; }
 
-        public DateTime CreatedDate { get; set; }
-        public DateTime ModifiedDate { get; set; }
+        public Guid Id { get; set; }
+        public string ConsumerName { get; set; }
+        public ConsumerType ConsumerType { get; set; }
     }
 
-    public enum Subscription
+    public enum ConsumerType
     {
         /// <summary>
         /// Only one reader

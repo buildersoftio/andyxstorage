@@ -1,4 +1,6 @@
-﻿namespace Buildersoft.Andy.X.Storage.Model.Events.Consumers
+﻿using System;
+
+namespace Buildersoft.Andy.X.Storage.Model.Events.Consumers
 {
     public class ConsumerDisconnectedArgs
     {
@@ -6,6 +8,8 @@
         public string Product { get; set; }
         public string Component { get; set; }
         public string Topic { get; set; }
+
+        public Guid Id { get; set; }
         public string ConsumerName { get; set; }
     }
 }

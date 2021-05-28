@@ -1,4 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Model.App.Consumers;
+using System;
 
 namespace Buildersoft.Andy.X.Storage.Model.Events.Consumers
 {
@@ -9,8 +10,8 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Consumers
         public string Component { get; set; }
         public string Topic { get; set; }
 
-        public Subscription Subscription { get; set; }
-
+        public Guid Id { get; set; }
         public string ConsumerName { get; set; }
+        public ConsumerType ConsumerType { get; set; }
     }
 }
