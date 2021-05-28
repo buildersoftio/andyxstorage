@@ -1,4 +1,6 @@
-﻿namespace Buildersoft.Andy.X.Storage.Model.Events.Producers
+﻿using System;
+
+namespace Buildersoft.Andy.X.Storage.Model.Events.Producers
 {
     public class ProducerConnectedArgs
     {
@@ -7,6 +9,7 @@
         public string Component { get; set; }
         public string Topic { get; set; }
 
+        public Guid Id { get; set; }
         public string ProducerName { get; set; }
     }
 }
