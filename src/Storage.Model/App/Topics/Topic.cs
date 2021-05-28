@@ -16,9 +16,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Topics
 
         public Schema Schema { get; set; }
 
-        public DateTime CreatedDate { get; set; }
-        public DateTime ModifiedDate { get; set; }
-
         public Topic()
         {
             Messages = new ConcurrentDictionary<string, Message>();

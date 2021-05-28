@@ -15,6 +15,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             this.logger = logger;
             this.xNodeEventService = xNodeEventService;
             this.tenantIOService = tenantIOService;
+
             InitializeEvents();
         }
 
@@ -34,37 +35,37 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_TenantCreated(Model.Events.Tenants.TenantCreatedArgs obj)
         {
-            // TODO: Implement
+            tenantIOService.TryCreateTenantDirectory(obj.Name, new Model.App.Tenants.Tenant() { Id = obj.Id, Name = obj.Name, DigitalSignature = obj.DigitalSignature });
         }
 
         private void XNodeEventService_TenantUpdated(Model.Events.Tenants.TenantUpdatedArgs obj)
         {
-            // TODO: Implement
+            // TODO: Implement later
         }
 
         private void XNodeEventService_ProductCreated(Model.Events.Products.ProductCreatedArgs obj)
         {
-            // TODO: Implement
+            tenantIOService.TryCreateProductDirectory(obj.Tenant, new Model.App.Products.Product() { Id = obj.Id, Name = obj.Name });
         }
 
         private void XNodeEventService_ProductUpdated(Model.Events.Products.ProductUpdatedArgs obj)
         {
-            // TODO: Implement
+            // TODO: Implement later
         }
 
         private void XNodeEventService_ComponentCreated(Model.Events.Components.ComponentCreatedArgs obj)
         {
-            // TODO: Implement
+            tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name });
         }
 
         private void XNodeEventService_ComponentUpdated(Model.Events.Components.ComponentUpdatedArgs obj)
         {
-            // TODO: Implement
+            // TODO: Implement later
         }
 
         private void XNodeEventService_TopicCreated(Model.Events.Topics.TopicCreatedArgs obj)
         {
-            // TODO: Implement
+            tenantIOService.TryCreateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Schema = obj.Schema });
         }
     }
 }

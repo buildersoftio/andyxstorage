@@ -23,13 +23,6 @@ namespace Buildersoft.Andy.X.Storage.App
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Storage.App", Version = "v1" });
-            });
-
             // Load configuration
             services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
@@ -42,25 +35,8 @@ namespace Buildersoft.Andy.X.Storage.App
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerfactory, IServiceProvider provider)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Storage.App v1"));
-            }
-
             loggerfactory.AddSerilog();
-
             app.StartServices(provider);
-
-            app.UseHttpsRedirection();
-            app.UseRouting();
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
         }
     }
 }

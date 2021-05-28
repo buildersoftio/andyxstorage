@@ -1,6 +1,9 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.IO.Writers;
+using Buildersoft.Andy.X.Storage.Model.App.Components;
+using Buildersoft.Andy.X.Storage.Model.App.Products;
 using Buildersoft.Andy.X.Storage.Model.App.Tenants;
+using Buildersoft.Andy.X.Storage.Model.App.Topics;
 using Buildersoft.Andy.X.Storage.Model.Logs;
 using System;
 using System.Collections.Generic;
@@ -44,7 +47,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             while (tenantConfigFilesQueue.Count > 0)
             {
                 var tenant = tenantConfigFilesQueue.Dequeue();
-                TenantWriter.WriteTenantConfigFromFile(tenant);
+                TenantWriter.WriteTenantConfigFile(tenant);
             }
             IsTenantConfigFilesWorking = false;
         }
@@ -78,6 +81,70 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 tenantConfigFilesQueue.Enqueue(tenantDetails);
                 InitializeTenantConfigFileProcessor();
 
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool TryCreateProductDirectory(string tenant, Product product)
+        {
+            try
+            {
+                if (Directory.Exists(TenantLocations.GetProductDirectory(tenant, product.Name)) == false)
+                {
+                    Directory.CreateDirectory(TenantLocations.GetProductDirectory(tenant, product.Name));
+                    Directory.CreateDirectory(TenantLocations.GetComponentRootDirectory(tenant, product.Name));
+
+                    // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
+                    TenantWriter.WriteProductConfigFile(tenant, product);
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool TryCreateComponentDirectory(string tenant, string product, Component component)
+        {
+            try
+            {
+                if (Directory.Exists(TenantLocations.GetComponentDirectory(tenant, product, component.Name)) == false)
+                {
+                    Directory.CreateDirectory(TenantLocations.GetComponentDirectory(tenant, product, component.Name));
+                    Directory.CreateDirectory(TenantLocations.GetTopicRootDirectory(tenant, product, component.Name));
+
+                    // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
+                    TenantWriter.WriteComponentConfigFile(tenant, product, component);
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool TryCreateTopicDirectory(string tenant, string product, string component, Topic topic)
+        {
+            try
+            {
+                if (Directory.Exists(TenantLocations.GetTopicDirectory(tenant, product, component, topic.Name)) == false)
+                {
+                    Directory.CreateDirectory(TenantLocations.GetTopicDirectory(tenant, product, component, topic.Name));
+                    Directory.CreateDirectory(TenantLocations.GetConsumerRootDirectory(tenant, product, component, topic.Name));
+                    Directory.CreateDirectory(TenantLocations.GetProducerRootDirectory(tenant, product, component, topic.Name));
+                    Directory.CreateDirectory(TenantLocations.GetTopicLogRootDirectory(tenant, product, component, topic.Name));
+                    Directory.CreateDirectory(TenantLocations.GetIndexRootDirectory(tenant, product, component, topic.Name));
+                    Directory.CreateDirectory(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic.Name));
+
+                    // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
+                    TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
+                }
                 return true;
             }
             catch (Exception)
