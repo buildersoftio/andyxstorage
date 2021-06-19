@@ -104,8 +104,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
 
         private void InitializeServices()
         {
-            _logger.LogInformation("ANDYX-STORAGE");
-            _logger.LogInformation("ANDYX-STORAGE#WELCOME");
+            _logger.LogInformation("Buildersoft");
+            _logger.LogInformation("Buildersoft Andy X Storage");
 
             _logger.LogInformation("ANDYX-STORAGE#SERVICES|STARTING");
             _logger.LogInformation("ANDYX-STORAGE#AGENTS|STARTING");
