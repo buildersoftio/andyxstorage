@@ -25,6 +25,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private readonly IXNodeConnectionRepository xNodeConnectionRepository;
         private readonly TenantIOService tenantIOService;
         private readonly ProducerIOService producerIOService;
+        private readonly ConsumerIOService consumerIOService;
 
         private HubConnection _connection;
 
@@ -56,6 +57,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private AgentEventHandler agentEvnetHandler;
         private TenantEventHandler tenantEventHandler;
         private ProducerEventHandler producerEventHandler;
+        private ConsumerEventHandler consumerEventHandler;
 
         private string agentId;
 
@@ -64,14 +66,17 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             XNodeConfiguration nodeConfig,
             DataStorageConfiguration dataStorageConfig,
             AgentConfiguration agentConfiguration,
-            IXNodeConnectionRepository xNodeConnectionRepository, 
+            IXNodeConnectionRepository xNodeConnectionRepository,
             TenantIOService tenantIOService,
-            ProducerIOService producerIOService)
+            ProducerIOService producerIOService,
+            ConsumerIOService consumerIOService)
         {
             this.logger = logger;
             this.xNodeConnectionRepository = xNodeConnectionRepository;
             this.tenantIOService = tenantIOService;
             this.producerIOService = producerIOService;
+            this.consumerIOService = consumerIOService;
+
             this.agentId = agentId;
 
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
@@ -110,6 +115,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             agentEvnetHandler = new AgentEventHandler(logger, this, tenantIOService);
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
+            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService);
 
         }
 

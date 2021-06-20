@@ -14,10 +14,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
         {
             return Path.Combine(GetProducerDirectory(tenantName, productName, componentName, topicName, producerName), "logs");
         }
+        
         public static string GetProducerConfigFile(string tenantName, string productName, string componentName, string topicName, string producerName)
         {
             return Path.Combine(GetProducerDirectory(tenantName, productName, componentName, topicName, producerName), $"{producerName}_config.andx");
         }
+        
         public static string GetProducerStateWeekLogFile(string tenantName, string productName, string componentName, string topicName, string producerName)
         {
             return Path.Combine(GetProducerLogsDirectory(tenantName, productName, componentName, topicName, producerName), $"{producerName}_state_{DateTime.Now:MM.yyyy}.log");

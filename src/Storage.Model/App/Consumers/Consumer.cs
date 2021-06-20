@@ -10,8 +10,10 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers
         public string Topic { get; set; }
 
         public Guid Id { get; set; }
-        public string ConsumerName { get; set; }
+        public string Name { get; set; }
         public SubscriptionType SubscriptionType { get; set; }
+
+        public DateTime CreatedDate { get; set; }
     }
 
     public enum SubscriptionType

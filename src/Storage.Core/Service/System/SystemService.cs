@@ -17,9 +17,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly ILogger<SystemService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly IXNodeConnectionRepository _xNodeConnectionRepository;
+
         private readonly SystemIOService _systemIOService;
         private readonly TenantIOService _tenantIOService;
         private readonly ProducerIOService _producerIOService;
+        private readonly ConsumerIOService _consumerIOService;
 
         private readonly List<XNodeConfiguration> nodes;
         private readonly DataStorageConfiguration dataStorage;
@@ -34,7 +36,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             IXNodeConnectionRepository xNodeConnectionRepository,
             SystemIOService systemIOService,
             TenantIOService tenantIOService,
-            ProducerIOService producerIOService)
+            ProducerIOService producerIOService,
+            ConsumerIOService consumerIOService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -43,6 +46,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             _systemIOService = systemIOService;
             _tenantIOService = tenantIOService;
             _producerIOService = producerIOService;
+            _consumerIOService = consumerIOService;
+
             nodes = _serviceProvider.GetService(typeof(List<XNodeConfiguration>)) as List<XNodeConfiguration>;
             dataStorage = _serviceProvider.GetService(typeof(DataStorageConfiguration)) as DataStorageConfiguration;
             agent = _serviceProvider.GetService(typeof(AgentConfiguration)) as AgentConfiguration;
@@ -134,7 +139,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                             dataStorage,
                             agent,
                             _xNodeConnectionRepository,
-                            _tenantIOService, _producerIOService);
+                            _tenantIOService,
+                            _producerIOService,
+                            _consumerIOService);
                     }
                 }
                 else
