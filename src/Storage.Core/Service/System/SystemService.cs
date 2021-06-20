@@ -108,7 +108,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
 
         private void DoFileConfiguration()
         {
-            if (Directory.Exists(SystemLocations.GetDataDirectory()))
+            if (Directory.Exists(SystemLocations.GetConfigDirectory()) && Directory.Exists(SystemLocations.GetStorageDirectory()))
                 return;
             _logger.LogInformation("ANDYX-STORAGE#CONFIGURING");
             _logger.LogInformation($"ANDYX-STORAGE#CONFIGURING|If this process failes make sure that this user have access to write in this location {SystemLocations.GetRootDirectory()}");
