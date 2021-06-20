@@ -58,8 +58,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private TenantEventHandler tenantEventHandler;
         private ProducerEventHandler producerEventHandler;
         private ConsumerEventHandler consumerEventHandler;
+        private MessageEventHandler messageEventHandler;
 
         private string agentId;
+        private readonly DataStorageConfiguration dataStorageConfig;
 
         public XNodeEventService(ILogger<SystemService> logger,
             string agentId,
@@ -78,6 +80,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             this.consumerIOService = consumerIOService;
 
             this.agentId = agentId;
+            this.dataStorageConfig = dataStorageConfig;
 
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
             _connection = provider.GetHubConnection();
@@ -103,11 +106,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             _connection.On<ConsumerConnectedArgs>("ConsumerConnected", consumerConnected => ConsumerConnected?.Invoke(consumerConnected));
             _connection.On<ConsumerDisconnectedArgs>("ConsumerDisconnected", consumerDisconnected => ConsumerDisconnected?.Invoke(consumerDisconnected));
 
+            _connection.On<MessageStoredArgs>("MessageStored", msgStored => MessageStored?.Invoke(msgStored));
+
             InitializeEventHandlers();
 
             ConnectAsync();
 
-            xNodeConnectionRepository.AddService(agentId, this);
+            xNodeConnectionRepository.AddService(nodeConfig.ServiceUrl, agentId, this);
         }
 
         private void InitializeEventHandlers()
@@ -116,7 +121,21 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
             consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService);
+            messageEventHandler = new MessageEventHandler(logger, this);
+        }
 
+        public IXNodeConnectionRepository GetXNodeConnectionRepository()
+        {
+            return xNodeConnectionRepository;
+        }
+
+        public string GetCurrentXNodeServiceUrl()
+        {
+            return dataStorageConfig.Name;
+        }
+        public HubConnection GetHubConnection()
+        {
+            return _connection;
         }
 
         public async void ConnectAsync()

@@ -22,6 +22,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         {
             xNodeEventService.StorageConnected += XNodeEventService_StorageConnected;
             xNodeEventService.StorageDisconnected += XNodeEventService_StorageDisconnected;
+
+
         }
 
         private void XNodeEventService_StorageDisconnected(Model.Events.Agents.AgentDisconnectedArgs obj)
