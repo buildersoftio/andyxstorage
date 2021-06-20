@@ -1,6 +1,7 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 {
@@ -36,11 +37,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
                 {
                     // this node should be ignored because, it already produces the messages to consumers connected.
-                    if (xNode.Key == xNodeEventService.GetCurrentXNodeServiceUrl())
-                        continue;
-
-                    //Transmit the message to the other nodes.
-                    await xNodeEventService.GetHubConnection().SendAsync("TransmitMessageToThisNodeConsumers", obj);
+                    if (xNode.Key != xNodeEventService.GetCurrentXNodeServiceUrl())
+                    {
+                        //Transmit the message to the other nodes.
+                        await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessageToThisNodeConsumers", obj);
+                    }
                 }
             }
         }

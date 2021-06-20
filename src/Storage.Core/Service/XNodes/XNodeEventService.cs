@@ -61,7 +61,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private MessageEventHandler messageEventHandler;
 
         private string agentId;
-        private readonly DataStorageConfiguration dataStorageConfig;
+        private readonly XNodeConfiguration nodeConfig;
 
         public XNodeEventService(ILogger<SystemService> logger,
             string agentId,
@@ -80,7 +80,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             this.consumerIOService = consumerIOService;
 
             this.agentId = agentId;
-            this.dataStorageConfig = dataStorageConfig;
+            this.nodeConfig = nodeConfig;
 
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
             _connection = provider.GetHubConnection();
@@ -131,7 +131,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         public string GetCurrentXNodeServiceUrl()
         {
-            return dataStorageConfig.Name;
+            return nodeConfig.ServiceUrl;
         }
         public HubConnection GetHubConnection()
         {
