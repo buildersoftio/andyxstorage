@@ -1,18 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30225.117
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31410.414
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Data.Model", "src\Buildersoft.Andy.X.Storage.Data.Model\Buildersoft.Andy.X.Storage.Data.Model.csproj", "{25EF159D-B604-420B-85AE-D1835B88927A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Logic", "src\Buildersoft.Andy.X.Storage.Logic\Buildersoft.Andy.X.Storage.Logic.csproj", "{581E06B7-7FDA-4A37-B70C-8D2475FEB107}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.Utilities", "src\Buildersoft.Andy.X.Storage.Utilities\Buildersoft.Andy.X.Storage.Utilities.csproj", "{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage.IO", "src\Buildersoft.Andy.X.Storage.FileConfig\Buildersoft.Andy.X.Storage.IO.csproj", "{10F1B54B-5A98-41A4-B460-A013011788E1}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Buildersoft.Andy.X.Storage", "src\Buildersoft.Andy.X.Storage\Buildersoft.Andy.X.Storage.csproj", "{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage.Core", "src\Storage.Core\Storage.Core.csproj", "{24583BCE-6E59-487F-82A5-5F6590F73D79}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage.IO", "src\Storage.IO\Storage.IO.csproj", "{FCC248BA-2DFD-4749-A00C-320872C6D5EA}"
@@ -21,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage.Model", "src\Storag
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage.App", "src\Storage.App\Storage.App.csproj", "{6D7D4210-5576-466B-B02A-B3282A28FF95}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Storage.Utility", "src\Storage.Utility\Storage.Utility.csproj", "{59253B00-3D1B-4537-A8A0-F44BB77BB328}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Storage.Utility", "src\Storage.Utility\Storage.Utility.csproj", "{59253B00-3D1B-4537-A8A0-F44BB77BB328}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,26 +19,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{25EF159D-B604-420B-85AE-D1835B88927A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{25EF159D-B604-420B-85AE-D1835B88927A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{25EF159D-B604-420B-85AE-D1835B88927A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{25EF159D-B604-420B-85AE-D1835B88927A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{581E06B7-7FDA-4A37-B70C-8D2475FEB107}.Release|Any CPU.Build.0 = Release|Any CPU
-		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{528F9E6F-8C52-4C1D-BA87-6B265C8575E0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{10F1B54B-5A98-41A4-B460-A013011788E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10F1B54B-5A98-41A4-B460-A013011788E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10F1B54B-5A98-41A4-B460-A013011788E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10F1B54B-5A98-41A4-B460-A013011788E1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BD76EDE2-FEFF-494E-8FDF-3A18AB327FC0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{24583BCE-6E59-487F-82A5-5F6590F73D79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{24583BCE-6E59-487F-82A5-5F6590F73D79}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24583BCE-6E59-487F-82A5-5F6590F73D79}.Release|Any CPU.ActiveCfg = Release|Any CPU
