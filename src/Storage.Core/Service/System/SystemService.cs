@@ -19,6 +19,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly IXNodeConnectionRepository _xNodeConnectionRepository;
         private readonly SystemIOService _systemIOService;
         private readonly TenantIOService _tenantIOService;
+        private readonly ProducerIOService _producerIOService;
+
         private readonly List<XNodeConfiguration> nodes;
         private readonly DataStorageConfiguration dataStorage;
         private readonly AgentConfiguration agent;
@@ -26,7 +28,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly CredentialsConfiguration credentials;
 
 
-        public SystemService(ILogger<SystemService> logger, IServiceProvider serviceProvider, IXNodeConnectionRepository xNodeConnectionRepository, SystemIOService systemIOService, TenantIOService tenantIOService)
+        public SystemService(
+            ILogger<SystemService> logger,
+            IServiceProvider serviceProvider,
+            IXNodeConnectionRepository xNodeConnectionRepository,
+            SystemIOService systemIOService,
+            TenantIOService tenantIOService,
+            ProducerIOService producerIOService)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -34,6 +42,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             _xNodeConnectionRepository = xNodeConnectionRepository;
             _systemIOService = systemIOService;
             _tenantIOService = tenantIOService;
+            _producerIOService = producerIOService;
             nodes = _serviceProvider.GetService(typeof(List<XNodeConfiguration>)) as List<XNodeConfiguration>;
             dataStorage = _serviceProvider.GetService(typeof(DataStorageConfiguration)) as DataStorageConfiguration;
             agent = _serviceProvider.GetService(typeof(AgentConfiguration)) as AgentConfiguration;
@@ -118,7 +127,14 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                     {
                         string agentId = Guid.NewGuid().ToString();
                         _logger.LogInformation($"ANDYX-STORAGE#AGENT|{agentId}|CONNECTING");
-                        var nodeEventsService = new XNodeEventService(_logger, agentId, xnode, dataStorage, agent, _xNodeConnectionRepository, _tenantIOService);
+                        var nodeEventsService = new XNodeEventService(
+                            _logger,
+                            agentId,
+                            xnode,
+                            dataStorage,
+                            agent,
+                            _xNodeConnectionRepository,
+                            _tenantIOService, _producerIOService);
                     }
                 }
                 else

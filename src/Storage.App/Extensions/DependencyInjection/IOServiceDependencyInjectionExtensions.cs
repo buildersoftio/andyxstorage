@@ -9,6 +9,7 @@ namespace Buildersoft.Andy.X.Storage.App.Extensions.DependencyInjection
         {
             services.AddSingleton<SystemIOService>();
             services.AddSingleton<TenantIOService>();
+            services.AddSingleton<ProducerIOService>();
         }
     }
 }

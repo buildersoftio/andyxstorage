@@ -12,6 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Storage.Model\Storage.Model.csproj" />
     <ProjectReference Include="..\Storage.Utility\Storage.Utility.csproj" />
   </ItemGroup>

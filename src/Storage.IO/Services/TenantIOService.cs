@@ -56,8 +56,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             while (tenantLogsQueue.Count > 0)
             {
-                var tenantLog = tenantLogsQueue.Dequeue();
-                TenantWriter.WriteInTenantLog(tenantLog.Tenant, tenantLog.Log);
+                try
+                {
+                    var tenantLog = tenantLogsQueue.Dequeue();
+                    TenantWriter.WriteInTenantLog(tenantLog.Tenant, tenantLog.Log);
+                }
+                catch (Exception)
+                {
+                    // Console.WriteLine($"ERROR on queue: {tenantLogsQueue.Count}");
+                }
+
             }
             IsTenantLoggingWorking = false;
         }
