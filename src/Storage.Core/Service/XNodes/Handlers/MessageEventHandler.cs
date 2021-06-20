@@ -33,7 +33,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             // Transmit the message to other connected XNODES.
             if (xNodeEventService.GetXNodeConnectionRepository().GetAllServices().Count > 1)
             {
-                logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{obj.Id}|msg: transmitted to other nodes");
                 foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
                 {
                     // this node should be ignored because, it already produces the messages to consumers connected.
