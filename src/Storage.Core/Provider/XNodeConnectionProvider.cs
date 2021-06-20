@@ -1,6 +1,8 @@
 ﻿using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Net.Http;
 using System.Text.Json.Serialization;
 
 namespace Buildersoft.Andy.X.Storage.Core.Provider
@@ -16,7 +18,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
 
         public XNodeConnectionProvider(XNodeConfiguration nodeConfig,
             DataStorageConfiguration dataStorageConfig,
-            AgentConfiguration agentConfiguration, 
+            AgentConfiguration agentConfiguration,
             string agentId)
         {
             this.nodeConfig = nodeConfig;
@@ -44,6 +46,18 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                 {
                     // TODO: Implement Authorization
                     // option.Headers["Authorization"] = $"Bearer {nodeConfig.JwtToken}";
+
+                    var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                    if (env == "Development")
+                    {
+                        option.HttpMessageHandlerFactory = (message) =>
+                        {
+                            if (message is HttpClientHandler httpClientHandler)
+                                httpClientHandler.ServerCertificateCustomValidationCallback +=
+                                    (sender, certificate, chain, sslPolicyErrors) => { return true; };
+                            return message;
+                        };
+                    }
 
                     option.Headers["x-andyx-storage-name"] = dataStorageConfig.Name;
                     option.Headers["x-andyx-storage-status"] = dataStorageConfig.Status.ToString();
