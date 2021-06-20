@@ -58,11 +58,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         ConsumerName = consumer.Name,
                         Log = $"{DateTime.Now:HH:mm:ss}|CONSUMER#|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED"
                     });
-
-                    ConsumerWriter.WriteConsumerConfigFile(tenant, product, component, topic, consumer);
                     logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|{tenant}|{product}|{component}|{topic}|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED");
 
                 }
+
+                ConsumerWriter.WriteConsumerConfigFile(tenant, product, component, topic, consumer);
 
                 consumerLogsQueue.Enqueue(new ConsumerLog()
                 {
