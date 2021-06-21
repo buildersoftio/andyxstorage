@@ -1,4 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
+using Buildersoft.Andy.X.Storage.IO.Services;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System.Linq;
@@ -9,11 +10,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
     {
         private readonly ILogger<SystemService> logger;
         private readonly XNodeEventService xNodeEventService;
+        private readonly MessageIOService messageIOService;
 
-        public MessageEventHandler(ILogger<SystemService> logger, XNodeEventService xNodeEventService)
+        public MessageEventHandler(ILogger<SystemService> logger, XNodeEventService xNodeEventService, MessageIOService messageIOService)
         {
             this.logger = logger;
             this.xNodeEventService = xNodeEventService;
+            this.messageIOService = messageIOService;
 
             InitializeEvents();
         }
@@ -25,7 +28,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private async void XNodeEventService_MessageStored(Model.Events.Messages.MessageStoredArgs obj)
         {
-            // TODO Store the message in this storage.
+            // TODO: Store the message in this storage.
             //
             //
             //

@@ -11,6 +11,7 @@ namespace Buildersoft.Andy.X.Storage.App.Extensions.DependencyInjection
             services.AddSingleton<TenantIOService>();
             services.AddSingleton<ProducerIOService>();
             services.AddSingleton<ConsumerIOService>();
+            services.AddSingleton<MessageIOService>();
         }
     }
 }
