@@ -3,6 +3,8 @@ using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.App.Producers;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Buildersoft.Andy.X.Storage.Model.App.Topics
 {
@@ -14,6 +16,11 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Topics
         public ConcurrentDictionary<string, Producer> Producers { get; set; }
         public ConcurrentDictionary<string, Consumer> Consumers { get; set; }
 
+        public int PartitionIndex { get; set; }
+        public string ActiveMessagePartitionFile { get; set; }
+        public string PartitionDate { get; set; }
+        public List<string> MessagePartitionFiles { get; set; }
+
         public Schema Schema { get; set; }
 
         public Topic()
@@ -23,6 +30,13 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Topics
             Consumers = new ConcurrentDictionary<string, Consumer>();
 
             Schema = new Schema();
+
+            PartitionIndex = 1;
+            ActiveMessagePartitionFile = $"msg_{DateTime.Now:MM_yyyy}_partition_{PartitionIndex}.xand";
+            PartitionDate = DateTime.Now.ToString("dd-MM-yyyy");
+
+            MessagePartitionFiles = new List<string>();
+
         }
     }
 

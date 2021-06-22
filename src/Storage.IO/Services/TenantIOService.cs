@@ -5,8 +5,9 @@ using Buildersoft.Andy.X.Storage.Model.App.Products;
 using Buildersoft.Andy.X.Storage.Model.App.Tenants;
 using Buildersoft.Andy.X.Storage.Model.App.Topics;
 using Buildersoft.Andy.X.Storage.Model.Logs;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 
@@ -14,15 +15,19 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 {
     public class TenantIOService
     {
-        private Queue<Tenant> tenantConfigFilesQueue;
-        private Queue<TenantLog> tenantLogsQueue;
+        private readonly ILogger<TenantIOService> logger;
+
+        private ConcurrentQueue<Tenant> tenantConfigFilesQueue;
+        private ConcurrentQueue<TenantLog> tenantLogsQueue;
         private bool IsTenantConfigFilesWorking = false;
         private bool IsTenantLoggingWorking = false;
 
-        public TenantIOService()
+        public TenantIOService(ILogger<TenantIOService> logger)
         {
-            tenantConfigFilesQueue = new Queue<Tenant>();
-            tenantLogsQueue = new Queue<TenantLog>();
+            this.logger = logger;
+
+            tenantConfigFilesQueue = new ConcurrentQueue<Tenant>();
+            tenantLogsQueue = new ConcurrentQueue<TenantLog>();
         }
 
         private void InitializeTenantConfigFileProcessor()
@@ -46,8 +51,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             while (tenantConfigFilesQueue.Count > 0)
             {
-                var tenant = tenantConfigFilesQueue.Dequeue();
-                TenantWriter.WriteTenantConfigFile(tenant);
+                Tenant tenant;
+                bool isTenantReturned = tenantConfigFilesQueue.TryDequeue(out tenant);
+                if (isTenantReturned == true)
+                    TenantWriter.WriteTenantConfigFile(tenant);
+                else
+                    logger.LogError("ANDYX-STORAGE#TENANTS|ERROR|Processing of tenant failed, couldn't Dequeue.");
             }
             IsTenantConfigFilesWorking = false;
         }
@@ -58,8 +67,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 try
                 {
-                    var tenantLog = tenantLogsQueue.Dequeue();
-                    TenantWriter.WriteInTenantLog(tenantLog.Tenant, tenantLog.Log);
+                    TenantLog tenantLog;
+                    bool isLogReturned = tenantLogsQueue.TryDequeue(out tenantLog);
+                    if (isLogReturned == true)
+                        TenantWriter.WriteInTenantLog(tenantLog.Tenant, tenantLog.Log);
+                    else
+                        logger.LogError("ANDYX-STORAGE#TENANTS|ERROR|Logging the incoming requests on tenant failed.");
                 }
                 catch (Exception)
                 {
@@ -150,13 +163,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     Directory.CreateDirectory(TenantLocations.GetIndexRootDirectory(tenant, product, component, topic.Name));
                     Directory.CreateDirectory(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic.Name));
 
+                    if (File.Exists(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)) == false)
+                        File.Create(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)).Close();
+
                     // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
                     TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
                 }
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return false;
             }
         }

@@ -28,10 +28,15 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private async void XNodeEventService_MessageStored(Model.Events.Messages.MessageStoredArgs obj)
         {
-            // TODO: Store the message in this storage.
-            //
-            //
-            //
+            messageIOService.WriteMessageInFile(new Model.App.Messages.Message()
+            {
+                Tenant = obj.Tenant,
+                Id = obj.Id,
+                Component = obj.Component,
+                MessageRaw = obj.MessageRaw,
+                Product = obj.Product,
+                Topic = obj.Topic
+            });
 
             // Transmit the message to other connected XNODES.
             if (xNodeEventService.GetXNodeConnectionRepository().GetAllServices().Count > 1)

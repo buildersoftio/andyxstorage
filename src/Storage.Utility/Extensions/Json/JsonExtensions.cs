@@ -23,7 +23,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
             });
         }
 
-        public static TClass JsonToObject<TClass>(this string jsonMessage) where TClass : new()
+        public static TClass JsonToObject<TClass>(this string jsonMessage)
         {
             return (TClass)(JsonSerializer.Deserialize(jsonMessage, typeof(TClass), new JsonSerializerOptions()
             {
@@ -33,7 +33,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
             }));
         }
 
-        public static TClass JsonToObjectAndDecrypt<TClass>(this string jsonMessage) where TClass : new()
+        public static TClass JsonToObjectAndDecrypt<TClass>(this string jsonMessage)
         {
             return (TClass)(JsonSerializer.Deserialize(jsonMessage, typeof(TClass), new JsonSerializerOptions()
             {

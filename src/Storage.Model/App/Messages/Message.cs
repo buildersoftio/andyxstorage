@@ -4,13 +4,12 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages
 {
     public class Message
     {
-        public Guid Id { get; set; }
-        public string Data { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public string Tenant { get; set; }
+        public string Product { get; set; }
+        public string Component { get; set; }
+        public string Topic { get; set; }
 
-        public Message()
-        {
-            CreatedDate = DateTime.Now;
-        }
+        public Guid Id { get; set; }
+        public object MessageRaw { get; set; }
     }
 }
