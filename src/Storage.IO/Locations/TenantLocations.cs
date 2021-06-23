@@ -75,6 +75,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
             return Path.Combine(GetMessageRootDirectory(tenantName, productName, componentName, topicName), partition);
         }
 
+        public static string GetIdKeyIndexFile(string tenantName, string productName, string componentName, string topicName, string idKeyFile)
+        {
+            return Path.Combine(GetIndexRootDirectory(tenantName, productName, componentName, topicName), idKeyFile);
+        }
+
         public static string GetTenantConfigFile(string tenantName)
         {
             return Path.Combine(GetTenantDirectory(tenantName), $"{tenantName}_config.andx");

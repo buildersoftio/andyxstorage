@@ -3,11 +3,11 @@ using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.App.Topics;
+using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
@@ -16,11 +16,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
     public class MessageIOService
     {
         private readonly ILogger<MessageIOService> logger;
+        private readonly PartitionConfiguration partitionConfiguration;
         private ConcurrentDictionary<string, FileGate> topicsActiveFiles;
 
-        public MessageIOService(ILogger<MessageIOService> logger)
+        public MessageIOService(ILogger<MessageIOService> logger, PartitionConfiguration partitionConfiguration)
         {
             this.logger = logger;
+            this.partitionConfiguration = partitionConfiguration;
+
             topicsActiveFiles = new ConcurrentDictionary<string, FileGate>();
         }
 
@@ -35,17 +38,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void MessagingProcessor(string topicKey)
         {
-            while (topicsActiveFiles[topicKey].MessagesQueue.Count > 0)
+            while (topicsActiveFiles[topicKey].MessagesBuffer.Count > 0)
             {
                 try
                 {
                     Message message;
-                    bool isMessageReturned = topicsActiveFiles[topicKey].MessagesQueue.TryDequeue(out message);
+                    bool isMessageReturned = topicsActiveFiles[topicKey].MessagesBuffer.TryDequeue(out message);
                     if (isMessageReturned == true)
                     {
                         ProcessMessageToFileFile(topicKey, message);
                         topicsActiveFiles[topicKey].RowsCount++;
-                        logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{message.Tenant}|{message.Product}|{message.Component}|{message.Topic}|msg-{message.Id}|index:{topicsActiveFiles[topicKey].RowsCount}|STORED");
+                        logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{message.Tenant}|{message.Product}|{message.Component}|{message.Topic}|msg-{message.Id}|partition_index:{topicsActiveFiles[topicKey].RowsCount}|STORED");
                     }
                     else
                         logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|TOPIC|{topicKey}");
@@ -62,27 +65,39 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void ProcessMessageToFileFile(string topicKey, Message message)
         {
-            if (topicsActiveFiles[topicKey].FileStream == null)
+            if (topicsActiveFiles[topicKey].MessageDetailsFileStream == null)
             {
-                // will create a new FileStream
+                // Will create a new FileStream
                 Topic topic = TenantReader.ReadTopicConfigFile(message.Tenant, message.Product, message.Component, message.Topic);
                 string newFileLocation = TenantLocations.GetMessagePartitionFile(message.Tenant, message.Product, message.Component, message.Topic, topic.ActiveMessagePartitionFile);
                 int countRowsInPartition = File.ReadAllLines(newFileLocation).Length;
 
-                topicsActiveFiles[topicKey].FileStream =
+                // Initialize message detail file
+                topicsActiveFiles[topicKey].MessageDetailsFileStream =
                     new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 topicsActiveFiles[topicKey].RowsCount = countRowsInPartition;
 
-                topicsActiveFiles[topicKey].StreamWriter = new StreamWriter(topicsActiveFiles[topicKey].FileStream);
-                topicsActiveFiles[topicKey].StreamWriter.AutoFlush = true;
+                topicsActiveFiles[topicKey].MessageDetailsStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].MessageDetailsFileStream);
+
+                // Initialize IdKey Index File
+                string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
+                topicsActiveFiles[topicKey].IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
+                topicsActiveFiles[topicKey].IdKeyStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].IdKeyFileStream);
             }
 
             // Check if the file has 5k lines
             CheckAndChangePartition(message, topicsActiveFiles[topicKey]);
 
             // Write message
-            topicsActiveFiles[topicKey].StreamWriter.WriteLine(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
-            topicsActiveFiles[topicKey].StreamWriter.Flush();
+            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLine(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
+            topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLine(message.Id);
+
+            // Flushing to disk every 100 messages
+            if (topicsActiveFiles[topicKey].RowsCount % 100 == 0)
+            {
+                topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
+                topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
+            }
         }
 
         public void WriteMessageInFile(Message message)
@@ -92,25 +107,28 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 var fileGate = new FileGate()
                 {
-                    FileStream = null,
+                    MessageDetailsFileStream = null,
                     RowsCount = -1
                 };
 
                 topicsActiveFiles.TryAdd(topicKey, fileGate);
             }
 
-            topicsActiveFiles[topicKey].MessagesQueue.Enqueue(message);
+            topicsActiveFiles[topicKey].MessagesBuffer.Enqueue(message);
             InitializeMessagingProcessor(topicKey);
         }
 
         private void CheckAndChangePartition(Message message, FileGate fileGate)
         {
 
-            if (fileGate.RowsCount >= 3000)
+            if (fileGate.RowsCount >= partitionConfiguration.Size)
             {
                 // Close connection with current partition
-                fileGate.StreamWriter.Close();
-                fileGate.FileStream.Close();
+
+                fileGate.MessageDetailsStreamWriter.Close();
+                fileGate.MessageDetailsFileStream.Close();
+                fileGate.IdKeyStreamWriter.Close();
+                fileGate.IdKeyFileStream.Close();
 
                 Topic topic = TenantReader.ReadTopicConfigFile(message.Tenant, message.Product, message.Component, message.Topic);
                 if (DateTime.Now.ToString("dd-MM-yyyy") != topic.PartitionDate)
@@ -127,26 +145,35 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 if (File.Exists(newFileLocation) == false)
                     File.Create(newFileLocation).Close();
 
-                fileGate.FileStream = new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 fileGate.RowsCount = 0;
-                fileGate.StreamWriter = new StreamWriter(fileGate.FileStream);
+                fileGate.MessageDetailsFileStream = new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
+                fileGate.MessageDetailsStreamWriter = new StreamWriter(fileGate.MessageDetailsFileStream);
+
+                // Initialize IdKey Index File
+                string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
+                fileGate.IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
+                fileGate.IdKeyStreamWriter = new StreamWriter(fileGate.IdKeyFileStream);
             }
         }
     }
 
     public class FileGate
     {
-        public FileStream FileStream { get; set; }
-        public StreamWriter StreamWriter { get; set; }
+        public FileStream MessageDetailsFileStream { get; set; }
+        public StreamWriter MessageDetailsStreamWriter { get; set; }
+
+        public FileStream IdKeyFileStream { get; set; }
+        public StreamWriter IdKeyStreamWriter { get; set; }
+
         public int RowsCount { get; set; }
 
         // Processing Engine
-        public ConcurrentQueue<Message> MessagesQueue { get; set; }
+        public ConcurrentQueue<Message> MessagesBuffer { get; set; }
         public bool IsMessagingWorking { get; set; }
 
         public FileGate()
         {
-            MessagesQueue = new ConcurrentQueue<Message>();
+            MessagesBuffer = new ConcurrentQueue<Message>();
             IsMessagingWorking = false;
             RowsCount = 0;
         }
