@@ -1,4 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Components;
 using Buildersoft.Andy.X.Storage.Model.App.Products;
@@ -169,6 +170,45 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
                     TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
                 }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
+        public bool TryUpdateTopicDirectory(string tenant, string product, string component, Topic topic)
+        {
+            try
+            {
+                if (Directory.Exists(TenantLocations.GetTopicDirectory(tenant, product, component, topic.Name)) != true)
+                    Directory.CreateDirectory(TenantLocations.GetTopicDirectory(tenant, product, component, topic.Name));
+                if (Directory.Exists(TenantLocations.GetConsumerRootDirectory(tenant, product, component, topic.Name)) != true)
+                    Directory.CreateDirectory(TenantLocations.GetConsumerRootDirectory(tenant, product, component, topic.Name));
+                if (Directory.Exists(TenantLocations.GetProducerRootDirectory(tenant, product, component, topic.Name)) != true)
+                    Directory.CreateDirectory(TenantLocations.GetProducerRootDirectory(tenant, product, component, topic.Name));
+                if (Directory.Exists(TenantLocations.GetTopicLogRootDirectory(tenant, product, component, topic.Name)) != true)
+                    Directory.CreateDirectory(TenantLocations.GetTopicLogRootDirectory(tenant, product, component, topic.Name));
+                if (Directory.Exists(TenantLocations.GetIndexRootDirectory(tenant, product, component, topic.Name)) != true)
+                    Directory.CreateDirectory(TenantLocations.GetIndexRootDirectory(tenant, product, component, topic.Name));
+                if (Directory.Exists(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic.Name)) != true)
+                    Directory.CreateDirectory(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic.Name));
+
+                if (File.Exists(TenantLocations.GetTopicConfigFile(tenant, product, component, topic.Name)) != true)
+                {
+                    if (File.Exists(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)) == false)
+                        File.Create(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)).Close();
+
+                    // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
+                    TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
+                    return true;
+                }
+                Topic fromFile = TenantReader.ReadTopicConfigFile(tenant, product, component, topic.Name);
+                fromFile.Schema = topic.Schema;
+                TenantWriter.WriteTopicConfigFile(tenant, product, component, fromFile);
+
                 return true;
             }
             catch (Exception ex)

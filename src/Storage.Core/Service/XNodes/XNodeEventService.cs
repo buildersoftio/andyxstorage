@@ -43,6 +43,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         public event Action<ComponentUpdatedArgs> ComponentUpdated;
 
         public event Action<TopicCreatedArgs> TopicCreated;
+        public event Action<TopicUpdatedArgs> TopicUpdated;
         public event Action<SchemaUpdatedArgs> SchemaUpdated;
 
         public event Action<MessageStoredArgs> MessageStored;
@@ -100,6 +101,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             _connection.On<ComponentUpdatedArgs>("ComponentUpdated", componentUpdated => ComponentUpdated?.Invoke(componentUpdated));
 
             _connection.On<TopicCreatedArgs>("TopicCreated", topicCreated => TopicCreated?.Invoke(topicCreated));
+            _connection.On<TopicUpdatedArgs>("TopicUpdated", topicUpdated => TopicUpdated?.Invoke(topicUpdated));
             _connection.On<SchemaUpdatedArgs>("SchemaUpdated", schemaUpdated => SchemaUpdated?.Invoke(schemaUpdated));
 
             _connection.On<ProducerConnectedArgs>("ProducerConnected", producerConnected => ProducerConnected?.Invoke(producerConnected));
