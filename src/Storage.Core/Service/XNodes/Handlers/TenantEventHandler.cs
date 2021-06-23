@@ -31,6 +31,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             xNodeEventService.ComponentUpdated += XNodeEventService_ComponentUpdated;
 
             xNodeEventService.TopicCreated += XNodeEventService_TopicCreated;
+            xNodeEventService.TopicUpdated += XNodeEventService_TopicUpdated;
+
         }
 
         private void XNodeEventService_TenantCreated(Model.Events.Tenants.TenantCreatedArgs obj)
@@ -52,7 +54,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_ProductUpdated(Model.Events.Products.ProductUpdatedArgs obj)
         {
-            // TODO: Implement later
+            tenantIOService.TryCreateProductDirectory(obj.Tenant, new Model.App.Products.Product() { Id = obj.Id, Name = obj.Name });
         }
 
         private void XNodeEventService_ComponentCreated(Model.Events.Components.ComponentCreatedArgs obj)
@@ -63,13 +65,18 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_ComponentUpdated(Model.Events.Components.ComponentUpdatedArgs obj)
         {
-            // TODO: Implement later
+            tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name });
         }
 
         private void XNodeEventService_TopicCreated(Model.Events.Topics.TopicCreatedArgs obj)
         {
             tenantIOService.TryCreateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Schema = obj.Schema });
             logger.LogInformation($"ANDYX-STORAGE#TOPICS|{obj.Tenant}|{obj.Product}|{obj.Component}|{obj.Name}|CREATED");
+        }
+
+        private void XNodeEventService_TopicUpdated(Model.Events.Topics.TopicUpdatedArgs obj)
+        {
+            tenantIOService.TryUpdateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Schema = obj.Schema });
         }
     }
 }
