@@ -17,7 +17,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
 
         public static string GetProductRootDirectory(string tenantName)
         {
-            return Path.Combine(GetTenantDirectory(tenantName), "products");
+            return Path.Combine(GetTenantDirectory(tenantName));
         }
 
         public static string GetProductDirectory(string tenantName, string productName)
@@ -27,7 +27,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
 
         public static string GetComponentRootDirectory(string tenantName, string productName)
         {
-            return Path.Combine(GetProductDirectory(tenantName, productName), "components");
+            return Path.Combine(GetProductDirectory(tenantName, productName));
         }
 
         public static string GetComponentDirectory(string tenantName, string productName, string componentName)
@@ -37,7 +37,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
 
         public static string GetTopicRootDirectory(string tenantName, string productName, string componentName)
         {
-            return Path.Combine(GetComponentDirectory(tenantName, productName, componentName), "topics");
+            return Path.Combine(GetComponentDirectory(tenantName, productName, componentName));
         }
 
         public static string GetTopicDirectory(string tenantName, string productName, string componentName, string topicName)
