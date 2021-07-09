@@ -1,4 +1,5 @@
 using Buildersoft.Andy.X.Storage.App.Extensions.DependencyInjection;
+using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,8 @@ namespace Buildersoft.Andy.X.Storage.App
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddEntityFrameworkSqlite().AddDbContext<TenantContext>();
+
             // Load configuration
             services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
@@ -35,6 +38,11 @@ namespace Buildersoft.Andy.X.Storage.App
         {
             loggerfactory.AddSerilog();
             app.StartServices(provider);
+
+            //using (var client = new TenantContext())
+            //{
+            //    client.Database.EnsureCreated();
+            //}
         }
     }
 }

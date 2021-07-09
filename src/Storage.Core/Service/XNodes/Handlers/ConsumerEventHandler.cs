@@ -25,7 +25,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         {
             xNodeEventService.ConsumerConnected += XNodeEventService_ConsumerConnected;
             xNodeEventService.ConsumerDisconnected += XNodeEventService_ConsumerDisconnected;
+            xNodeEventService.MessageAcknowledged += XNodeEventService_MessageAcknowledged;
         }
+
         private void XNodeEventService_ConsumerConnected(Model.Events.Consumers.ConsumerConnectedArgs obj)
         {
             consumerIOService.TryCreateConsumerDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Model.App.Consumers.Consumer()
@@ -53,6 +55,12 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Topic = obj.Topic,
                 CreatedDate = DateTime.Now
             });
+        }
+
+        private void XNodeEventService_MessageAcknowledged(Model.Events.Messages.MessageAcknowledgedArgs obj)
+        {
+            // TODO: Implement message acknowledgment for the messages.
+            consumerIOService.WriteMessageAcknowledged(obj);
         }
     }
 }

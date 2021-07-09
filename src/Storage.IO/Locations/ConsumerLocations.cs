@@ -15,6 +15,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
             return Path.Combine(GetConsumerDirectory(tenantName, productName, componentName, topicName, consumerName), "logs");
         }
 
+        public static string GetConsumerPointerFile(string tenantName, string productName, string componentName, string topicName, string consumerName)
+        {
+            return Path.Combine(GetConsumerDirectory(tenantName, productName, componentName, topicName, consumerName), $"{consumerName}_pointer.anddb");
+        }
+
         public static string GetConsumerConfigFile(string tenantName, string productName, string componentName, string topicName, string consumerName)
         {
             return Path.Combine(GetConsumerDirectory(tenantName, productName, componentName, topicName, consumerName), $"{consumerName}_config.andx");
