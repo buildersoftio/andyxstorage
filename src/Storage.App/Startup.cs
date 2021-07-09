@@ -23,7 +23,6 @@ namespace Buildersoft.Andy.X.Storage.App
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddEntityFrameworkSqlite().AddDbContext<TenantContext>();
-
             // Load configuration
             services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
@@ -38,11 +37,6 @@ namespace Buildersoft.Andy.X.Storage.App
         {
             loggerfactory.AddSerilog();
             app.StartServices(provider);
-
-            //using (var client = new TenantContext())
-            //{
-            //    client.Database.EnsureCreated();
-            //}
         }
     }
 }

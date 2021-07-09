@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
+using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Entities;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
@@ -18,15 +19,18 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
     public class ConsumerIOService
     {
         private readonly ILogger<ConsumerIOService> logger;
+        private readonly PartitionConfiguration partitionConfiguration;
+
         private ConcurrentQueue<ConsumerLog> consumerLogsQueue;
         private bool IsConsumerLoggingWorking = false;
 
         private ConcurrentDictionary<string, ConsumerConnector> connectors;
 
 
-        public ConsumerIOService(ILogger<ConsumerIOService> logger)
+        public ConsumerIOService(ILogger<ConsumerIOService> logger, PartitionConfiguration partitionConfiguration)
         {
             this.logger = logger;
+            this.partitionConfiguration = partitionConfiguration;
             consumerLogsQueue = new ConcurrentQueue<ConsumerLog>();
             connectors = new ConcurrentDictionary<string, ConsumerConnector>();
         }
@@ -185,6 +189,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     if (isMessageReturned == true)
                     {
                         UpdatePointer(consumerKey, message);
+                        connectors[consumerKey].Count++;
                     }
                     else
                         logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|TOPIC|{consumerKey}");
@@ -212,13 +217,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
             else
             {
+                // add
                 connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
             }
-        }
 
-        public void WriteMessageSent(Message message)
-        {
-            // TODO: Let us think about this later.
+            if (connectors[consumerKey].Count >= partitionConfiguration.Size)
+            {
+                // flush data into disk
+                connectors[consumerKey].Count = 0;
+                connectors[consumerKey].TenantContext.SaveChanges();
+            }
         }
     }
 }
