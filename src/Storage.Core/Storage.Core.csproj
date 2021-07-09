@@ -21,4 +21,8 @@
     <ProjectReference Include="..\Storage.Model\Storage.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Contexts\" />
+  </ItemGroup>
+
 </Project>

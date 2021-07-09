@@ -17,21 +17,21 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
     {
         private readonly ILogger<MessageIOService> logger;
         private readonly PartitionConfiguration partitionConfiguration;
-        private ConcurrentDictionary<string, FileGate> topicsActiveFiles;
+        private ConcurrentDictionary<string, MessageFileGate> topicsActiveFiles;
 
         public MessageIOService(ILogger<MessageIOService> logger, PartitionConfiguration partitionConfiguration)
         {
             this.logger = logger;
             this.partitionConfiguration = partitionConfiguration;
 
-            topicsActiveFiles = new ConcurrentDictionary<string, FileGate>();
+            topicsActiveFiles = new ConcurrentDictionary<string, MessageFileGate>();
         }
 
         private void InitializeMessagingProcessor(string topicKey)
         {
-            if (topicsActiveFiles[topicKey].IsMessagingWorking != true)
+            if (topicsActiveFiles[topicKey].IsProcessorWorking != true)
             {
-                topicsActiveFiles[topicKey].IsMessagingWorking = true;
+                topicsActiveFiles[topicKey].IsProcessorWorking = true;
                 new Thread(() => MessagingProcessor(topicKey)).Start();
             }
         }
@@ -46,7 +46,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     bool isMessageReturned = topicsActiveFiles[topicKey].MessagesBuffer.TryDequeue(out message);
                     if (isMessageReturned == true)
                     {
-                        ProcessMessageToFileFile(topicKey, message);
+                        ProcessMessageToFile(topicKey, message);
                         topicsActiveFiles[topicKey].RowsCount++;
                         logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{message.Tenant}|{message.Product}|{message.Component}|{message.Topic}|msg-{message.Id}|partition_index:{topicsActiveFiles[topicKey].RowsCount}|STORED");
                     }
@@ -58,12 +58,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
 
                 }
-
             }
-            topicsActiveFiles[topicKey].IsMessagingWorking = false;
+            topicsActiveFiles[topicKey].IsProcessorWorking = false;
         }
 
-        private void ProcessMessageToFileFile(string topicKey, Message message)
+        private void ProcessMessageToFile(string topicKey, Message message)
         {
             if (topicsActiveFiles[topicKey].MessageDetailsFileStream == null)
             {
@@ -105,7 +104,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             string topicKey = $"{message.Tenant}-{message.Product}-{message.Component}-{message.Topic}";
             if (topicsActiveFiles.ContainsKey(topicKey) != true)
             {
-                var fileGate = new FileGate()
+                var fileGate = new MessageFileGate()
                 {
                     MessageDetailsFileStream = null,
                     RowsCount = -1
@@ -118,7 +117,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             InitializeMessagingProcessor(topicKey);
         }
 
-        private void CheckAndChangePartition(Message message, FileGate fileGate)
+        private void CheckAndChangePartition(Message message, MessageFileGate fileGate)
         {
 
             if (fileGate.RowsCount >= partitionConfiguration.Size)
@@ -157,7 +156,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         }
     }
 
-    public class FileGate
+    public class MessageFileGate
     {
         public FileStream MessageDetailsFileStream { get; set; }
         public StreamWriter MessageDetailsStreamWriter { get; set; }
@@ -169,12 +168,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         // Processing Engine
         public ConcurrentQueue<Message> MessagesBuffer { get; set; }
-        public bool IsMessagingWorking { get; set; }
+        public bool IsProcessorWorking { get; set; }
 
-        public FileGate()
+        public MessageFileGate()
         {
             MessagesBuffer = new ConcurrentQueue<Message>();
-            IsMessagingWorking = false;
+            IsProcessorWorking = false;
             RowsCount = 0;
         }
     }

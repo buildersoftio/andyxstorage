@@ -56,7 +56,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         public event Action<ConsumerDisconnectedArgs> ConsumerDisconnected;
 
 
-        private AgentEventHandler agentEvnetHandler;
+        private AgentEventHandler agentEventHandler;
         private TenantEventHandler tenantEventHandler;
         private ProducerEventHandler producerEventHandler;
         private ConsumerEventHandler consumerEventHandler;
@@ -109,6 +109,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
             _connection.On<ConsumerConnectedArgs>("ConsumerConnected", consumerConnected => ConsumerConnected?.Invoke(consumerConnected));
             _connection.On<ConsumerDisconnectedArgs>("ConsumerDisconnected", consumerDisconnected => ConsumerDisconnected?.Invoke(consumerDisconnected));
+            _connection.On<MessageAcknowledgedArgs>("MessageAcknowledged", messageAcked => MessageAcknowledged?.Invoke(messageAcked));
 
             _connection.On<MessageStoredArgs>("MessageStored", msgStored => MessageStored?.Invoke(msgStored));
 
@@ -121,7 +122,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         private void InitializeEventHandlers()
         {
-            agentEvnetHandler = new AgentEventHandler(logger, this, tenantIOService);
+            agentEventHandler = new AgentEventHandler(logger, this, tenantIOService);
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
             consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService);
