@@ -60,6 +60,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 }
             }
             topicsActiveFiles[topicKey].IsProcessorWorking = false;
+
+            // Flush all messages to disk
+            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
+            topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
         }
 
         private void ProcessMessageToFile(string topicKey, Message message)
