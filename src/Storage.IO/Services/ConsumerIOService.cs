@@ -236,28 +236,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
         }
 
-
-        // Read Messages form files
-        public MessageRow ReadMessageRow(string tenant, string product, string component, string topic, Guid messageId, string paritionId = "")
-        {
-            MessageRow row = null;
-            string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic));
-            foreach (var partitionFile in paritionFiles)
-            {
-                var lines = TryReadAllLines(partitionFile);
-                if (lines == null)
-                    continue;
-
-
-                row = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(x => x.Id == messageId).FirstOrDefault();
-                if (row != null)
-                    break;
-            }
-
-            return row;
-        }
-
-        private string[] TryReadAllLines(string path)
+        public string[] TryReadAllLines(string path)
         {
             try
             {
