@@ -54,6 +54,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         public event Action<ConsumerConnectedArgs> ConsumerConnected;
         public event Action<ConsumerDisconnectedArgs> ConsumerDisconnected;
+        public event Action<ConsumerConnectedArgs> ConsumerUnacknowledgedMessagesRequested;
 
 
         private AgentEventHandler agentEventHandler;
@@ -109,6 +110,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
             _connection.On<ConsumerConnectedArgs>("ConsumerConnected", consumerConnected => ConsumerConnected?.Invoke(consumerConnected));
             _connection.On<ConsumerDisconnectedArgs>("ConsumerDisconnected", consumerDisconnected => ConsumerDisconnected?.Invoke(consumerDisconnected));
+            _connection.On<ConsumerConnectedArgs>("ConsumerUnacknowledgedMessagesRequested", consumerConnected => ConsumerUnacknowledgedMessagesRequested?.Invoke(consumerConnected));
             _connection.On<MessageAcknowledgedArgs>("MessageAcknowledged", messageAcked => MessageAcknowledged?.Invoke(messageAcked));
 
             _connection.On<MessageStoredArgs>("MessageStored", msgStored => MessageStored?.Invoke(msgStored));

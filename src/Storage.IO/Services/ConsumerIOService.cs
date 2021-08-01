@@ -5,13 +5,14 @@ using Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
-using Buildersoft.Andy.X.Storage.Model.Entities;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Logs;
+using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
@@ -129,15 +130,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
         }
 
-
-        // Acknowledgement of messages
-        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message)
+        private string AddConsumerConnectorGetKey(string tenant, string product, string component, string topic, string consumer)
         {
-            string consumerKey = $"{message.Tenant}-{message.Product}-{message.Component}-{message.Topic}-{message.Consumer}";
+            string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
             if (connectors.ContainsKey(consumerKey) != true)
             {
-                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(message.Tenant,
-                     message.Product, message.Component, message.Topic, message.Consumer)))
+                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
+                     product, component, topic, consumer)))
                 {
                     IsProcessorWorking = false
                 };
@@ -145,8 +144,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 connectors.TryAdd(consumerKey, connector);
             }
 
+            return consumerKey;
+        }
+
+        // Acknowledgement of messages
+        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message)
+        {
+            string consumerKey = AddConsumerConnectorGetKey(message.Tenant, message.Product, message.Component, message.Topic, message.Consumer);
+
             if (message.IsAcknowledged == true)
-                connectors[consumerKey].MessagesBuffer.Enqueue(new ConsumerMessage()
+                connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
                 {
                     MessageId = message.MessageId,
                     IsAcknowledged = message.IsAcknowledged,
@@ -156,7 +163,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     PartitionIndex = 0
                 });
             else
-                connectors[consumerKey].MessagesBuffer.Enqueue(new ConsumerMessage()
+                connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
                 {
                     MessageId = message.MessageId,
                     IsAcknowledged = message.IsAcknowledged,
@@ -184,7 +191,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 try
                 {
-                    ConsumerMessage message;
+                    Model.Entities.ConsumerMessage message;
                     bool isMessageReturned = connectors[consumerKey].MessagesBuffer.TryDequeue(out message);
                     if (isMessageReturned == true)
                     {
@@ -205,7 +212,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             connectors[consumerKey].IsProcessorWorking = false;
         }
 
-        private void UpdatePointer(string consumerKey, ConsumerMessage message)
+        private void UpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
         {
             var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
             if (messageIndb != null)
@@ -228,5 +235,40 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 connectors[consumerKey].TenantContext.SaveChanges();
             }
         }
+
+
+        // Read Messages form files
+        public MessageRow ReadMessageRow(string tenant, string product, string component, string topic, Guid messageId, string paritionId = "")
+        {
+            MessageRow row = null;
+            string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic));
+            foreach (var partitionFile in paritionFiles)
+            {
+                var lines = TryReadAllLines(partitionFile);
+                if (lines == null)
+                    continue;
+
+
+                row = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(x => x.Id == messageId).FirstOrDefault();
+                if (row != null)
+                    break;
+            }
+
+            return row;
+        }
+
+        private string[] TryReadAllLines(string path)
+        {
+            try
+            {
+                return File.ReadAllLines(path);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"Error occurred during the opening of partition, details={ex.Message}");
+                return null;
+            }
+        }
+
     }
 }
