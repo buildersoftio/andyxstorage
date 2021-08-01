@@ -8,7 +8,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
     {
         public TenantContext TenantContext { get; set; }
         // Processing Engine
-        public ConcurrentQueue<ConsumerMessage> MessagesBuffer { get; set; }
+        public ConcurrentQueue<Entities.ConsumerMessage> MessagesBuffer { get; set; }
         public bool IsProcessorWorking { get; set; }
         public int Count { get; set; }
 
@@ -16,7 +16,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         {
             TenantContext = null;
             IsProcessorWorking = false;
-            MessagesBuffer = new ConcurrentQueue<ConsumerMessage>();
+            MessagesBuffer = new ConcurrentQueue<Entities.ConsumerMessage>();
             TenantContext = tenantContext;
             Count = 0;
 

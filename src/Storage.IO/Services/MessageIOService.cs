@@ -48,7 +48,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     {
                         ProcessMessageToFile(topicKey, message);
                         topicsActiveFiles[topicKey].RowsCount++;
-                        logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{message.Tenant}|{message.Product}|{message.Component}|{message.Topic}|msg-{message.Id}|partition_index:{topicsActiveFiles[topicKey].RowsCount}|STORED");
+
+                        // We are commenting the logging for now, in the future logging will be written into log files, in console we will show only mandatory logs and errors.
+                        //logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{message.Tenant}|{message.Product}|{message.Component}|{message.Topic}|msg-{message.Id}|partition_index:{topicsActiveFiles[topicKey].RowsCount}|STORED");
                     }
                     else
                         logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|TOPIC|{topicKey}");
