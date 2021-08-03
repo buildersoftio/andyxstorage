@@ -1,4 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors;
@@ -7,7 +8,6 @@ using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Logs;
-using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -34,11 +34,36 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             this.partitionConfiguration = partitionConfiguration;
             consumerLogsQueue = new ConcurrentQueue<ConsumerLog>();
             connectors = new ConcurrentDictionary<string, ConsumerConnector>();
+
+            InitializeAllConsumerConnections();
         }
 
-        private void ProcessMessageToFile(string consumerKey, MessageAcknowledgementRow message)
+        private void InitializeAllConsumerConnections()
         {
-            // We will process into tables.
+
+            var consumers = TenantReader.ReadAllConsumers();
+            logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|INITIALIZING");
+            foreach (var consumer in consumers)
+            {
+                InitializeConsumerConnection(consumer.Tenant, consumer.Product, consumer.Component, consumer.Topic, consumer.Name);
+            }
+
+            logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|INITIALIZED");
+        }
+
+        private void InitializeConsumerConnection(string tenant, string product, string component, string topic, string consumer)
+        {
+            string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
+            if (connectors.ContainsKey(consumerKey))
+                return;
+
+            var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
+                product, component, topic, consumer)))
+            {
+                IsProcessorWorking = false
+            };
+
+            connectors.TryAdd(consumerKey, connector);
         }
 
         private void InitializeConsumerLoggingProcessor()
@@ -81,9 +106,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         Log = $"{DateTime.Now:HH:mm:ss}|CONSUMER#|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED"
                     });
                     logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|{tenant}|{product}|{component}|{topic}|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED");
+
+
                 }
 
                 ConsumerWriter.WriteConsumerConfigFile(tenant, product, component, topic, consumer);
+                InitializeConsumerConnection(tenant, product, component, topic, consumer.Name);
 
                 consumerLogsQueue.Enqueue(new ConsumerLog()
                 {
@@ -133,22 +161,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private string AddConsumerConnectorGetKey(string tenant, string product, string component, string topic, string consumer)
         {
             string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
-            if (connectors.ContainsKey(consumerKey) != true)
-            {
-                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
-                     product, component, topic, consumer)))
-                {
-                    IsProcessorWorking = false
-                };
 
-                connectors.TryAdd(consumerKey, connector);
-            }
+            InitializeConsumerConnection(tenant, product, component, topic, consumer);
 
             return consumerKey;
         }
 
         // Acknowledgement of messages
-        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message)
+        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message, string partitionFile = "none")
         {
             string consumerKey = AddConsumerConnectorGetKey(message.Tenant, message.Product, message.Component, message.Topic, message.Consumer);
 
@@ -159,7 +179,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     IsAcknowledged = message.IsAcknowledged,
                     AcknowledgedDate = DateTime.Now,
                     SentDate = DateTime.Now,
-                    PartitionFile = "n/a",
+                    PartitionFile = partitionFile,
                     PartitionIndex = 0
                 });
             else
@@ -168,12 +188,30 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     MessageId = message.MessageId,
                     IsAcknowledged = message.IsAcknowledged,
                     SentDate = DateTime.Now,
-                    PartitionFile = "n/a",
+                    PartitionFile = partitionFile,
                     PartitionIndex = 0
                 });
 
             InitializeMessagingProcessor(consumerKey);
+        }
 
+        public void WriteMessageAsUnackedToAllConsumers(string tenant, string product, string component, string topic, Guid messageId, string partitionFile)
+        {
+            // string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
+            var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{tenant}-{product}-{component}-{topic}")); //);
+            foreach (var consumerKey in activeConsumerConnectiorKeys)
+            {
+                connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
+                {
+                    MessageId = messageId,
+                    IsAcknowledged = false,
+                    SentDate = DateTime.Now,
+                    PartitionFile = partitionFile,
+                    PartitionIndex = 0
+                });
+
+                InitializeMessagingProcessor(consumerKey);
+            }
         }
 
         private void InitializeMessagingProcessor(string consumerKey)
@@ -208,7 +246,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 }
             }
 
-            connectors[consumerKey].TenantContext.SaveChanges();
+            //connectors[consumerKey].TenantContext.SaveChanges();
             connectors[consumerKey].IsProcessorWorking = false;
         }
 
@@ -228,12 +266,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
             }
 
-            if (connectors[consumerKey].Count >= partitionConfiguration.Size)
-            {
-                // flush data into disk
-                connectors[consumerKey].Count = 0;
-                connectors[consumerKey].TenantContext.SaveChanges();
-            }
+            connectors[consumerKey].TenantContext.SaveChanges();
+
+            // TODO: new solution
+            // Check this one, I think it should be less than partition size
+            //if (connectors[consumerKey].Count >= partitionConfiguration.Size)
+            //{
+            //    // flush data into disk
+            //    connectors[consumerKey].Count = 0;
+            //    connectors[consumerKey].TenantContext.SaveChanges();
+            //}
         }
 
         public string[] TryReadAllLines(string path)
