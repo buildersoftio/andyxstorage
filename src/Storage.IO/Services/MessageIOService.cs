@@ -17,13 +17,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
     {
         private readonly ILogger<MessageIOService> logger;
         private readonly PartitionConfiguration partitionConfiguration;
+        private readonly ConsumerIOService consumerIOService;
         private ConcurrentDictionary<string, MessageFileGate> topicsActiveFiles;
 
-        public MessageIOService(ILogger<MessageIOService> logger, PartitionConfiguration partitionConfiguration)
+        public MessageIOService(ILogger<MessageIOService> logger, PartitionConfiguration partitionConfiguration, ConsumerIOService consumerIOService)
         {
             this.logger = logger;
             this.partitionConfiguration = partitionConfiguration;
-
+            this.consumerIOService = consumerIOService;
             topicsActiveFiles = new ConcurrentDictionary<string, MessageFileGate>();
         }
 
@@ -83,11 +84,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 topicsActiveFiles[topicKey].RowsCount = countRowsInPartition;
 
                 topicsActiveFiles[topicKey].MessageDetailsStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].MessageDetailsFileStream);
-
+                topicsActiveFiles[topicKey].ActivePartitionFile = topic.ActiveMessagePartitionFile;
                 // Initialize IdKey Index File
                 string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
                 topicsActiveFiles[topicKey].IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 topicsActiveFiles[topicKey].IdKeyStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].IdKeyFileStream);
+
             }
 
             // Check if the file has 5k lines
@@ -96,6 +98,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             // Write message
             topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLine(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
             topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLine(message.Id);
+
+            // Write as unacked message to consumers
+            consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
 
             // Flushing to disk every 100 messages
             if (topicsActiveFiles[topicKey].RowsCount % 100 == 0)
@@ -153,6 +158,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 fileGate.RowsCount = 0;
                 fileGate.MessageDetailsFileStream = new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 fileGate.MessageDetailsStreamWriter = new StreamWriter(fileGate.MessageDetailsFileStream);
+                fileGate.ActivePartitionFile = topic.ActiveMessagePartitionFile;
 
                 // Initialize IdKey Index File
                 string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
@@ -175,6 +181,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         // Processing Engine
         public ConcurrentQueue<Message> MessagesBuffer { get; set; }
         public bool IsProcessorWorking { get; set; }
+        public string ActivePartitionFile { get; set; }
 
         public MessageFileGate()
         {

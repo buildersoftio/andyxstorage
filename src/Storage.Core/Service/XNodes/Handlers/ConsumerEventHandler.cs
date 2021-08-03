@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 {
@@ -26,6 +27,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             this.logger = logger;
             this.xNodeEventService = xNodeEventService;
             this.consumerIOService = consumerIOService;
+
             InitializeEvents();
         }
 
@@ -73,21 +75,44 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private async void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(Model.Events.Consumers.ConsumerConnectedArgs obj)
         {
-            if (File.Exists(ConsumerLocations.GetConsumerPointerFile(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName)) != true)
-                return;
+            int timeoutCounter = 0;
+            while (File.Exists(ConsumerLocations.GetConsumerPointerFile(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName)) != true)
+            {
+                // try every second for 5 seconds if the db is created.
+                timeoutCounter++;
+                Thread.Sleep(1000);
+                if (timeoutCounter == 5)
+                    return;
+            }
 
             TenantContext tenantContext = new TenantContext(ConsumerLocations.GetConsumerPointerFile(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName));
-
             string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic));
+            bool isNewConsumer = false;
 
             var unackedMessages = tenantContext.ConsumerMessages.Where(x => x.IsAcknowledged == false).OrderBy(x => x.SentDate).ToList();
+            if (unackedMessages.Count == 0)
+            {
+                int totalCount = tenantContext.ConsumerMessages.Count();
+                if (totalCount == 0)
+                {
+                    unackedMessages = tenantContext.ConsumerMessages.OrderBy(x => x.SentDate).ToList();
+                    isNewConsumer = true;
+                }
+            }
+
             foreach (string paritionFile in paritionFiles)
             {
                 string[] lines = consumerIOService.TryReadAllLines(paritionFile);
                 if (lines == null)
                     continue;
 
-                var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(r => unackedMessages.Any(u => u.MessageId == r.Id));
+                // Get all rows
+                var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
+
+                // If is old consumer send only unacknowledged ones.
+                if (isNewConsumer != true)
+                    rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(r => unackedMessages.Any(u => u.MessageId == r.Id)).ToList();
+
                 foreach (var row in rows)
                 {
                     var consumerMessage = new ConsumerMessage()
@@ -111,7 +136,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     }
                 }
 
-                unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
+                if (isNewConsumer != true)
+                    unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
             }
         }
     }
