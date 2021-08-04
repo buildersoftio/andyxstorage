@@ -3,7 +3,9 @@ using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors;
-using Buildersoft.Andy.X.Storage.Model.App.Messages;
+using Buildersoft.Andy.X.Storage.Model.App.Products;
+using Buildersoft.Andy.X.Storage.Model.App.Tenants;
+using Buildersoft.Andy.X.Storage.Model.App.Topics;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
@@ -219,6 +221,19 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             if (connectors[consumerKey].IsProcessorWorking != true)
             {
                 connectors[consumerKey].IsProcessorWorking = true;
+                int timeOutCounter = 0;
+                while (connectors[consumerKey].TenantContext.Database.CanConnect() != true)
+                {
+                    timeOutCounter++;
+                    Thread.Sleep(500);
+                    logger.LogWarning($"ANDYX-STORAGE#MESSAGING#POINTERS|{consumerKey}|disconnected|connecting|try|{timeOutCounter} of 10");
+                    if (timeOutCounter == 10)
+                    {
+                        connectors[consumerKey].IsProcessorWorking = false;
+                        return;
+                    }
+                }
+
                 new Thread(() => MessagingProcessor(consumerKey)).Start();
             }
         }
@@ -263,6 +278,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
             if (messageIndb != null)
             {
+                // Check if the message has been acked before arriving from message distribution
+                if (messageIndb.IsAcknowledged == true)
+                    return;
+
                 // update
                 messageIndb.IsAcknowledged = message.IsAcknowledged;
                 messageIndb.AcknowledgedDate = message.AcknowledgedDate;
