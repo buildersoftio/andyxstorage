@@ -245,15 +245,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
                 }
             }
-            try
-            {
-                connectors[consumerKey].TenantContext.SaveChanges();
 
-            }
-            catch (Exception)
-            {
-                // do nothing for now
-            }
+            //try
+            //{
+            //    connectors[consumerKey].TenantContext.SaveChanges();
+            //}
+            //catch (Exception)
+            //{
+            //    // do nothing for now
+            //}
+
             connectors[consumerKey].IsProcessorWorking = false;
         }
 
@@ -273,15 +274,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
             }
 
-            // Flushing to disk every 100 messages
-            if (connectors[consumerKey].Count % 100 == 0)
-                connectors[consumerKey].TenantContext.SaveChanges();
+            connectors[consumerKey].TenantContext.SaveChanges();
 
-            if (connectors[consumerKey].Count >= partitionConfiguration.Size)
-            {
-                // flush data into disk
-                connectors[consumerKey].Count = 0;
-            }
+            //// Flushing to disk every 100 messages
+            //if (connectors[consumerKey].Count % 100 == 0)
+            //    connectors[consumerKey].TenantContext.SaveChanges();
+
+            //if (connectors[consumerKey].Count >= partitionConfiguration.Size)
+            //{
+            //    // flush data into disk
+            //    connectors[consumerKey].Count = 0;
+            //}
         }
 
         public string[] TryReadAllLines(string path)
