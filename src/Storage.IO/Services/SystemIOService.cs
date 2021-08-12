@@ -1,10 +1,18 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using Microsoft.Extensions.Logging;
 using System.IO;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
     public class SystemIOService
     {
+        public SystemIOService(ILogger<SystemIOService> logger)
+        {
+            logger.LogInformation("Buildersoft");
+            logger.LogInformation("Buildersoft Andy X Storage");
+            logger.LogInformation("ANDYX-STORAGE#READY");
+        }
+
         public void CreateConfigDirectories()
         {
             Directory.CreateDirectory(SystemLocations.GetDataDirectory());
