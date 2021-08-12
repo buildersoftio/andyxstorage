@@ -3,9 +3,7 @@ using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors;
-using Buildersoft.Andy.X.Storage.Model.App.Products;
-using Buildersoft.Andy.X.Storage.Model.App.Tenants;
-using Buildersoft.Andy.X.Storage.Model.App.Topics;
+using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
@@ -26,6 +24,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private ConcurrentQueue<ConsumerLog> consumerLogsQueue;
         private bool IsConsumerLoggingWorking = false;
+        private ConcurrentQueue<UnprocessedMessage> unprocessedMessageQueue;
+        private bool isUnprocessingMessageProcessorWorking = false;
 
         private ConcurrentDictionary<string, ConsumerConnector> connectors;
 
@@ -34,7 +34,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             this.logger = logger;
             this.partitionConfiguration = partitionConfiguration;
+
             consumerLogsQueue = new ConcurrentQueue<ConsumerLog>();
+            unprocessedMessageQueue = new ConcurrentQueue<UnprocessedMessage>();
+
             connectors = new ConcurrentDictionary<string, ConsumerConnector>();
 
             InitializeAllConsumerConnections();
@@ -199,23 +202,62 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public void WriteMessageAsUnackedToAllConsumers(string tenant, string product, string component, string topic, Guid messageId, string partitionFile)
         {
-            // string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
-            var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{tenant}-{product}-{component}-{topic}")); //);
-            foreach (var consumerKey in activeConsumerConnectiorKeys)
+            unprocessedMessageQueue.Enqueue(new UnprocessedMessage()
             {
-                connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
-                {
-                    MessageId = messageId,
-                    IsAcknowledged = false,
-                    SentDate = DateTime.Now,
-                    PartitionFile = partitionFile,
-                    PartitionIndex = 0
-                });
+                Tenant = tenant,
+                Product = product,
+                Component = component,
+                Topic = topic,
+                MessageId = messageId,
+                PartitionFile = partitionFile
+            });
 
-                InitializeMessagingProcessor(consumerKey);
+            InitializeUnprocessedMessageProcessor();
+        }
+
+        #region UnProcessedMessageProcessor
+        private void InitializeUnprocessedMessageProcessor()
+        {
+            if (isUnprocessingMessageProcessorWorking != true)
+            {
+                isUnprocessingMessageProcessorWorking = true;
+                new Thread(() => UnprocessedMessageProcesor()).Start();
             }
         }
 
+        private void UnprocessedMessageProcesor()
+        {
+            while (unprocessedMessageQueue.IsEmpty != true)
+            {
+                UnprocessedMessage unprocessedMessage;
+                bool isMessageReturned = unprocessedMessageQueue.TryDequeue(out unprocessedMessage);
+                if (isMessageReturned == true)
+                {
+                    var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{unprocessedMessage.Tenant}-{unprocessedMessage.Product}-{unprocessedMessage.Component}-{unprocessedMessage.Topic}")); //);
+                    foreach (var consumerKey in activeConsumerConnectiorKeys)
+                    {
+                        connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
+                        {
+                            MessageId = unprocessedMessage.MessageId,
+                            IsAcknowledged = false,
+                            SentDate = DateTime.Now,
+                            PartitionFile = unprocessedMessage.PartitionFile,
+                            PartitionIndex = 0
+                        });
+
+                        InitializeMessagingProcessor(consumerKey);
+                    }
+                }
+                else
+                    logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|unProcessedMessages");
+
+            }
+
+            isUnprocessingMessageProcessorWorking = false;
+        }
+        #endregion
+
+        #region MessageProcessor and Update Pointer
         private void InitializeMessagingProcessor(string consumerKey)
         {
             if (connectors[consumerKey].IsProcessorWorking != true)
@@ -237,10 +279,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 new Thread(() => MessagingProcessor(consumerKey)).Start();
             }
         }
-
         private void MessagingProcessor(string consumerKey)
         {
-            while (connectors[consumerKey].MessagesBuffer.Count > 0)
+            while (connectors[consumerKey].MessagesBuffer.IsEmpty != true)
             {
                 try
                 {
@@ -261,18 +302,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 }
             }
 
-            //try
-            //{
-            //    connectors[consumerKey].TenantContext.SaveChanges();
-            //}
-            //catch (Exception)
-            //{
-            //    // do nothing for now
-            //}
+            TryPointerSaveChanges(consumerKey);
 
             connectors[consumerKey].IsProcessorWorking = false;
         }
-
         private void UpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
         {
             var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
@@ -293,18 +326,36 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
             }
 
-            connectors[consumerKey].TenantContext.SaveChanges();
-
-            //// Flushing to disk every 100 messages
-            //if (connectors[consumerKey].Count % 100 == 0)
-            //    connectors[consumerKey].TenantContext.SaveChanges();
-
-            //if (connectors[consumerKey].Count >= partitionConfiguration.Size)
-            //{
-            //    // flush data into disk
-            //    connectors[consumerKey].Count = 0;
-            //}
+            AutoFlushPointers(consumerKey);
         }
+
+        private void AutoFlushPointers(string consumerKey)
+        {
+            // Flushing to disk every 100 messages
+            if (connectors[consumerKey].Count % 100 == 0)
+            {
+                TryPointerSaveChanges(consumerKey);
+            }
+
+            if (connectors[consumerKey].Count >= partitionConfiguration.Size)
+            {
+                // flush data into disk
+                connectors[consumerKey].Count = 0;
+            }
+        }
+
+        private void TryPointerSaveChanges(string consumerKey)
+        {
+            try
+            {
+                connectors[consumerKey].TenantContext.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+        #endregion
 
         public string[] TryReadAllLines(string path)
         {
