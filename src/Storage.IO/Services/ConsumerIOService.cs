@@ -326,11 +326,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
             }
 
-            AutoFlushPointers(consumerKey);
+            TryPointerSaveChanges(consumerKey);
+            //AutoFlushPointers(consumerKey);
         }
 
         private void AutoFlushPointers(string consumerKey)
         {
+            // There is a problem on bulk flushing, for now we just will store every message as sync.
             // Flushing to disk every 100 messages
             if (connectors[consumerKey].Count % 100 == 0)
             {
@@ -352,7 +354,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
             catch (Exception ex)
             {
-
+                //Console.WriteLine($"Error on flushing in pointer {ex.Message}");
             }
         }
         #endregion
