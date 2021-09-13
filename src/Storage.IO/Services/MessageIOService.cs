@@ -62,11 +62,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
                 }
             }
-            topicsActiveFiles[topicKey].IsProcessorWorking = false;
-
             // Flush all messages to disk
-            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
-            topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
+            AutoFlush(topicKey);
+            topicsActiveFiles[topicKey].IsProcessorWorking = false;
         }
 
         private void ProcessMessageToFile(string topicKey, Message message)
@@ -92,7 +90,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
             }
 
-            // Check if the file has 5k lines
+            // Check if the file has partitionSized lines
             CheckAndChangePartition(message, topicsActiveFiles[topicKey]);
 
             // Write message
@@ -103,11 +101,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
 
             // Flushing to disk every 100 messages
-            if (topicsActiveFiles[topicKey].RowsCount % 100 == 0)
-            {
-                topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
-                topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
-            }
+            // testing now for faster flushing
+            //if (topicsActiveFiles[topicKey].RowsCount % 100 == 0)
+            //{
+            //    topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
+            //    topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
+            //}
         }
 
         public void WriteMessageInFile(Message message)
@@ -134,6 +133,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             if (fileGate.RowsCount >= partitionConfiguration.Size)
             {
                 // Close connection with current partition
+                AutoFlush(fileGate);
 
                 fileGate.MessageDetailsStreamWriter.Close();
                 fileGate.MessageDetailsFileStream.Close();
@@ -165,6 +165,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 fileGate.IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 fileGate.IdKeyStreamWriter = new StreamWriter(fileGate.IdKeyFileStream);
             }
+        }
+
+        public void AutoFlush(string topicKey)
+        {
+            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
+            topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
+        }
+        public void AutoFlush(MessageFileGate fileGate)
+        {
+            fileGate.MessageDetailsStreamWriter.Flush();
+            fileGate.IdKeyStreamWriter.Flush();
         }
     }
 
