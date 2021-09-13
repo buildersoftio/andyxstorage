@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+    <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.2.10" />
   </ItemGroup>
 
   <ItemGroup>

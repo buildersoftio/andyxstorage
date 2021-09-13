@@ -289,12 +289,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     bool isMessageReturned = connectors[consumerKey].MessagesBuffer.TryDequeue(out message);
                     if (isMessageReturned == true)
                     {
-                        UpdatePointer(consumerKey, message);
+                        BulkAddOrUpdatePointer(consumerKey, message);
                         connectors[consumerKey].Count++;
                     }
                     else
                         logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|TOPIC|{consumerKey}");
-                    // Increase the Counter
                 }
                 catch (Exception)
                 {
@@ -302,10 +301,37 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 }
             }
 
-            TryPointerSaveChanges(consumerKey);
-
+            AutoFlushBatchPointers(consumerKey, true);
             connectors[consumerKey].IsProcessorWorking = false;
         }
+
+        private void BulkAddOrUpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
+        {
+            var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
+            if (messageIndb != null)
+            {
+                // Check if the message has been acked before arriving from message distribution
+                if (messageIndb.IsAcknowledged == true)
+                    return;
+
+                // update
+                messageIndb.IsAcknowledged = message.IsAcknowledged;
+                messageIndb.AcknowledgedDate = message.AcknowledgedDate;
+
+                connectors[consumerKey].BatchConsumerMessagesToUpdate.TryAdd(messageIndb.MessageId, messageIndb);
+            }
+            else
+            {
+                if (connectors[consumerKey].BatchConsumerMessagesToInsert.ContainsKey(message.MessageId))
+                    // Update, it comes to acknowledge before Auto Flushing..
+                    connectors[consumerKey].BatchConsumerMessagesToUpdate.TryAdd(message.MessageId, message);
+                else
+                    connectors[consumerKey].BatchConsumerMessagesToInsert.TryAdd(message.MessageId, message);
+            }
+
+            AutoFlushBatchPointers(consumerKey);
+        }
+
         private void UpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
         {
             var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
@@ -323,11 +349,36 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             else
             {
                 // add
+                // check if already exists
                 connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
             }
-
             TryPointerSaveChanges(consumerKey);
             //AutoFlushPointers(consumerKey);
+        }
+
+        private void AutoFlushBatchPointers(string consumerKey, bool flushAnyway = false)
+        {
+            if (flushAnyway == false)
+            {
+                if (connectors[consumerKey].BatchConsumerMessagesToInsert.Count() >= partitionConfiguration.Size)
+                {
+                    connectors[consumerKey].TenantContext.BulkInsert(connectors[consumerKey].BatchConsumerMessagesToInsert.Values);
+                    connectors[consumerKey].BatchConsumerMessagesToInsert.Clear();
+                }
+
+                if (connectors[consumerKey].BatchConsumerMessagesToUpdate.Count() >= partitionConfiguration.Size)
+                {
+                    connectors[consumerKey].TenantContext.BulkUpdate(connectors[consumerKey].BatchConsumerMessagesToUpdate.Values);
+                    connectors[consumerKey].BatchConsumerMessagesToUpdate.Clear();
+                }
+            }
+            else
+            {
+                connectors[consumerKey].TenantContext.BulkInsert(connectors[consumerKey].BatchConsumerMessagesToInsert.Values);
+                connectors[consumerKey].BatchConsumerMessagesToInsert.Clear();
+                connectors[consumerKey].TenantContext.BulkUpdate(connectors[consumerKey].BatchConsumerMessagesToUpdate.Values);
+                connectors[consumerKey].BatchConsumerMessagesToUpdate.Clear();
+            }
         }
 
         private void AutoFlushPointers(string consumerKey)

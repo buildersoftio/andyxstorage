@@ -21,5 +21,6 @@ namespace Buildersoft.Andy.X.Storage.Model.Contexts
         }
 
         public DbSet<Entities.ConsumerMessage> ConsumerMessages { get; set; }
+
     }
 }
