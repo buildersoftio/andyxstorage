@@ -307,105 +307,39 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void BulkAddOrUpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
         {
-            var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
-            if (messageIndb != null)
+            if (connectors[consumerKey].BatchConsumerMessagesToMerge.ContainsKey(message.MessageId))
             {
-                // Check if the message has been acked before arriving from message distribution
-                if (messageIndb.IsAcknowledged == true)
+                if (connectors[consumerKey].BatchConsumerMessagesToMerge[message.MessageId].IsAcknowledged == true)
                     return;
 
-                // update
-                messageIndb.IsAcknowledged = message.IsAcknowledged;
-                messageIndb.AcknowledgedDate = message.AcknowledgedDate;
-
-                connectors[consumerKey].BatchConsumerMessagesToUpdate.TryAdd(messageIndb.MessageId, messageIndb);
+                connectors[consumerKey].BatchConsumerMessagesToMerge[message.MessageId] = message;
             }
             else
-            {
-                if (connectors[consumerKey].BatchConsumerMessagesToInsert.ContainsKey(message.MessageId))
-                    // Update, it comes to acknowledge before Auto Flushing..
-                    connectors[consumerKey].BatchConsumerMessagesToUpdate.TryAdd(message.MessageId, message);
-                else
-                    connectors[consumerKey].BatchConsumerMessagesToInsert.TryAdd(message.MessageId, message);
-            }
+                connectors[consumerKey].BatchConsumerMessagesToMerge.TryAdd(message.MessageId, message);
 
             AutoFlushBatchPointers(consumerKey);
         }
 
-        private void UpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
-        {
-            var messageIndb = connectors[consumerKey].TenantContext.ConsumerMessages.Find(message.MessageId);
-            if (messageIndb != null)
-            {
-                // Check if the message has been acked before arriving from message distribution
-                if (messageIndb.IsAcknowledged == true)
-                    return;
-
-                // update
-                messageIndb.IsAcknowledged = message.IsAcknowledged;
-                messageIndb.AcknowledgedDate = message.AcknowledgedDate;
-                connectors[consumerKey].TenantContext.ConsumerMessages.Update(messageIndb);
-            }
-            else
-            {
-                // add
-                // check if already exists
-                connectors[consumerKey].TenantContext.ConsumerMessages.Add(message);
-            }
-            TryPointerSaveChanges(consumerKey);
-            //AutoFlushPointers(consumerKey);
-        }
-
         private void AutoFlushBatchPointers(string consumerKey, bool flushAnyway = false)
         {
-            if (flushAnyway == false)
+            lock (this)
             {
-                if (connectors[consumerKey].BatchConsumerMessagesToInsert.Count() >= partitionConfiguration.Size)
+                if (flushAnyway == false)
                 {
-                    connectors[consumerKey].TenantContext.BulkInsert(connectors[consumerKey].BatchConsumerMessagesToInsert.Values);
-                    connectors[consumerKey].BatchConsumerMessagesToInsert.Clear();
+                    if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() >= partitionConfiguration.Size)
+                    {
+                        connectors[consumerKey].TenantContext.BulkMerge(connectors[consumerKey].BatchConsumerMessagesToMerge.Values);
+                        connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
+                    }
                 }
-
-                if (connectors[consumerKey].BatchConsumerMessagesToUpdate.Count() >= partitionConfiguration.Size)
+                else
                 {
-                    connectors[consumerKey].TenantContext.BulkUpdate(connectors[consumerKey].BatchConsumerMessagesToUpdate.Values);
-                    connectors[consumerKey].BatchConsumerMessagesToUpdate.Clear();
+                    if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() != 0)
+                    {
+                        connectors[consumerKey].TenantContext.BulkMerge(connectors[consumerKey].BatchConsumerMessagesToMerge.Values);
+                        connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
+                    }
                 }
-            }
-            else
-            {
-                connectors[consumerKey].TenantContext.BulkInsert(connectors[consumerKey].BatchConsumerMessagesToInsert.Values);
-                connectors[consumerKey].BatchConsumerMessagesToInsert.Clear();
-                connectors[consumerKey].TenantContext.BulkUpdate(connectors[consumerKey].BatchConsumerMessagesToUpdate.Values);
-                connectors[consumerKey].BatchConsumerMessagesToUpdate.Clear();
-            }
-        }
-
-        private void AutoFlushPointers(string consumerKey)
-        {
-            // There is a problem on bulk flushing, for now we just will store every message as sync.
-            // Flushing to disk every 100 messages
-            if (connectors[consumerKey].Count % 100 == 0)
-            {
-                TryPointerSaveChanges(consumerKey);
-            }
-
-            if (connectors[consumerKey].Count >= partitionConfiguration.Size)
-            {
-                // flush data into disk
-                connectors[consumerKey].Count = 0;
-            }
-        }
-
-        private void TryPointerSaveChanges(string consumerKey)
-        {
-            try
-            {
-                connectors[consumerKey].TenantContext.SaveChanges();
-            }
-            catch (Exception ex)
-            {
-                //Console.WriteLine($"Error on flushing in pointer {ex.Message}");
             }
         }
         #endregion
@@ -421,6 +355,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 logger.LogError($"Error occurred during the opening of partition, details={ex.Message}");
                 return null;
             }
+        }
+
+        public ConsumerConnector GetConsumerConnector(string consumerKey)
+        {
+            return connectors[consumerKey];
         }
 
     }

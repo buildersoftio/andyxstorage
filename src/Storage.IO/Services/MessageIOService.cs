@@ -87,7 +87,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
                 topicsActiveFiles[topicKey].IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 topicsActiveFiles[topicKey].IdKeyStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].IdKeyFileStream);
-
             }
 
             // Check if the file has partitionSized lines

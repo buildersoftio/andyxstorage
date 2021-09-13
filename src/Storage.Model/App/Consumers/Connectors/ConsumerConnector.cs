@@ -13,7 +13,8 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         public bool IsProcessorWorking { get; set; }
         public int Count { get; set; }
 
-        public ConcurrentDictionary<Guid, Entities.ConsumerMessage> BatchConsumerMessagesToInsert { get; set; }
+        //public ConcurrentDictionary<Guid, Entities.ConsumerMessage> BatchConsumerMessagesToInsert { get; set; }
+        public ConcurrentDictionary<Guid, Entities.ConsumerMessage> BatchConsumerMessagesToMerge { get; set; }
         public ConcurrentDictionary<Guid, Entities.ConsumerMessage> BatchConsumerMessagesToUpdate { get; set; }
 
         public ConsumerConnector(TenantContext tenantContext)
@@ -21,7 +22,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
             TenantContext = null;
             IsProcessorWorking = false;
             MessagesBuffer = new ConcurrentQueue<Entities.ConsumerMessage>();
-            BatchConsumerMessagesToInsert = new ConcurrentDictionary<Guid, Entities.ConsumerMessage>();
+            BatchConsumerMessagesToMerge = new ConcurrentDictionary<Guid, Entities.ConsumerMessage>();
             BatchConsumerMessagesToUpdate = new ConcurrentDictionary<Guid, Entities.ConsumerMessage>();
 
             TenantContext = tenantContext;
