@@ -85,7 +85,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     return;
             }
 
-            TenantContext tenantContext = new TenantContext(ConsumerLocations.GetConsumerPointerFile(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName));
+            string consumerKey = $"{obj.Tenant}-{obj.Product}-{obj.Component}-{obj.Topic}-{obj.ConsumerName}";
+            var tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+
             string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic));
             bool isNewConsumer = false;
 
