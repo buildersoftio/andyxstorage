@@ -359,6 +359,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public ConsumerConnector GetConsumerConnector(string consumerKey)
         {
+            if (connectors.ContainsKey(consumerKey) != true)
+            {
+                string[] consumerData = consumerKey.Split("-");
+                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
+    consumerData[1], consumerData[2], consumerData[3], consumerData[4])))
+                {
+                    IsProcessorWorking = false
+                };
+
+                connectors.TryAdd(consumerKey, connector);
+            }
             return connectors[consumerKey];
         }
 
