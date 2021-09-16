@@ -86,7 +86,16 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
 
             string consumerKey = $"{obj.Tenant}-{obj.Product}-{obj.Component}-{obj.Topic}-{obj.ConsumerName}";
-            var tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+            TenantContext tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+            try
+            {
+                tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+            }
+            catch (Exception)
+            {
+                logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|{consumerKey}|could_not_read_unknowledge_messages");
+                return;
+            }
 
             string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic));
             bool isNewConsumer = false;
