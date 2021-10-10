@@ -30,6 +30,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
 
             try
             {
+                tenantContext.ChangeTracker.AutoDetectChangesEnabled = false;
                 tenantContext.Database.EnsureCreated();
             }
             catch (System.Exception)

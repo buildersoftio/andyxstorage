@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-    <PackageReference Include="Z.EntityFramework.Extensions.EFCore" Version="5.2.10" />
   </ItemGroup>
 
   <ItemGroup>
