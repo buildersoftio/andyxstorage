@@ -8,6 +8,7 @@ using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Logs;
+using EFCore.BulkExtensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -333,7 +334,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() >= partitionConfiguration.Size)
                     {
-                        connectors[consumerKey].TenantContext.BulkMerge(connectors[consumerKey].BatchConsumerMessagesToMerge.Values);
+                        connectors[consumerKey].TenantContext.BulkInsertOrUpdate(connectors[consumerKey].BatchConsumerMessagesToMerge.Values.ToList());
                         connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
                     }
                 }
@@ -341,7 +342,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() != 0)
                     {
-                        connectors[consumerKey].TenantContext.BulkMerge(connectors[consumerKey].BatchConsumerMessagesToMerge.Values);
+                        connectors[consumerKey].TenantContext.BulkInsertOrUpdate(connectors[consumerKey].BatchConsumerMessagesToMerge.Values.ToList());
                         connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
                     }
                 }
