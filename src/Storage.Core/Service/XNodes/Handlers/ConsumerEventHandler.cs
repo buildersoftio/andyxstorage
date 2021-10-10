@@ -101,59 +101,66 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic));
             bool isNewConsumer = false;
 
-            var unackedMessages = tenantContext.ConsumerMessages.Where(x => x.IsAcknowledged == false).OrderBy(x => x.SentDate).ToList();
-            if (unackedMessages.Count == 0)
+            try
             {
-                int totalCount = tenantContext.ConsumerMessages.Count();
-                if (totalCount == 0)
+                var unackedMessages = tenantContext.ConsumerMessages.Where(x => x.IsAcknowledged == false).OrderBy(x => x.SentDate).ToList();
+                if (unackedMessages.Count == 0)
                 {
-                    // Checking if this is a new consumer.
-                    if (obj.InitialPosition == InitialPosition.Latest)
-                        return;
-
-                    unackedMessages = tenantContext.ConsumerMessages.OrderBy(x => x.SentDate).ToList();
-                    isNewConsumer = true;
-                }
-            }
-
-            foreach (string paritionFile in paritionFiles)
-            {
-                string[] lines = consumerIOService.TryReadAllLines(paritionFile);
-                if (lines == null)
-                    continue;
-
-                // Get all rows
-                var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
-
-                // If is old consumer send only unacknowledged ones.
-                if (isNewConsumer != true)
-                    rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(r => unackedMessages.Any(u => u.MessageId == r.Id)).ToList();
-
-                foreach (var row in rows)
-                {
-                    var consumerMessage = new ConsumerMessage()
+                    int totalCount = tenantContext.ConsumerMessages.Count();
+                    if (totalCount == 0)
                     {
-                        Consumer = obj.ConsumerName,
-                        Message = new Message()
-                        {
-                            Tenant = obj.Tenant,
-                            Product = obj.Product,
-                            Component = obj.Component,
-                            Topic = obj.Topic,
-                            Id = row.Id,
-                            MessageRaw = row.MessageRaw
-                        }
-                    };
+                        // Checking if this is a new consumer.
+                        if (obj.InitialPosition == InitialPosition.Latest)
+                            return;
 
-                    foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
-                    {
-                        //Transmit the message to the other nodes.
-                        await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
+                        unackedMessages = tenantContext.ConsumerMessages.OrderBy(x => x.SentDate).ToList();
+                        isNewConsumer = true;
                     }
                 }
 
-                if (isNewConsumer != true)
-                    unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
+                foreach (string paritionFile in paritionFiles)
+                {
+                    string[] lines = consumerIOService.TryReadAllLines(paritionFile);
+                    if (lines == null)
+                        continue;
+
+                    // Get all rows
+                    var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
+
+                    // If is old consumer send only unacknowledged ones.
+                    if (isNewConsumer != true)
+                        rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(r => unackedMessages.Any(u => u.MessageId == r.Id)).ToList();
+
+                    foreach (var row in rows)
+                    {
+                        var consumerMessage = new ConsumerMessage()
+                        {
+                            Consumer = obj.ConsumerName,
+                            Message = new Message()
+                            {
+                                Tenant = obj.Tenant,
+                                Product = obj.Product,
+                                Component = obj.Component,
+                                Topic = obj.Topic,
+                                Id = row.Id,
+                                MessageRaw = row.MessageRaw
+                            }
+                        };
+
+                        foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                        {
+                            //Transmit the message to the other nodes.
+                            await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
+                        }
+                    }
+
+                    if (isNewConsumer != true)
+                        unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
+                }
+            }
+            catch (Exception)
+            {
+                logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|{consumerKey}|could_not_read_unknowledge_messages");
             }
         }
     }
