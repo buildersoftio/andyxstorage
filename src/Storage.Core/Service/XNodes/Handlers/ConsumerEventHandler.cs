@@ -50,6 +50,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Component = obj.Component,
                 Topic = obj.Topic,
                 SubscriptionType = obj.SubscriptionType,
+                ConsumerSettings = new ConsumerSettings() { InitialPosition = obj.InitialPosition },
                 CreatedDate = DateTime.Now
             });
         }
