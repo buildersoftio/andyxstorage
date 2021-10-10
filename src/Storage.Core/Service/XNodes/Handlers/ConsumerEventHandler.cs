@@ -50,6 +50,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Component = obj.Component,
                 Topic = obj.Topic,
                 SubscriptionType = obj.SubscriptionType,
+                ConsumerSettings = new ConsumerSettings() { InitialPosition = obj.InitialPosition },
                 CreatedDate = DateTime.Now
             });
         }
@@ -106,6 +107,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 int totalCount = tenantContext.ConsumerMessages.Count();
                 if (totalCount == 0)
                 {
+                    // Checking if this is a new consumer.
+                    if (obj.InitialPosition == InitialPosition.Latest)
+                        return;
+
                     unackedMessages = tenantContext.ConsumerMessages.OrderBy(x => x.SentDate).ToList();
                     isNewConsumer = true;
                 }

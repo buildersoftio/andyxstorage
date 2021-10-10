@@ -14,6 +14,21 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers
         public SubscriptionType SubscriptionType { get; set; }
 
         public DateTime CreatedDate { get; set; }
+        public ConsumerSettings ConsumerSettings { get; set; }
+        public Consumer()
+        {
+            ConsumerSettings = new ConsumerSettings();
+        }
+
+    }
+
+    public class ConsumerSettings
+    {
+        public InitialPosition InitialPosition { get; set; }
+        public ConsumerSettings()
+        {
+            InitialPosition = InitialPosition.Latest;
+        }
     }
 
     public enum SubscriptionType
@@ -30,5 +45,11 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers
         /// Shared to more than one reader.
         /// </summary>
         Shared
+    }
+
+    public enum InitialPosition
+    {
+        Earliest,
+        Latest
     }
 }

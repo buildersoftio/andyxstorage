@@ -13,5 +13,6 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Consumers
         public Guid Id { get; set; }
         public string ConsumerName { get; set; }
         public SubscriptionType SubscriptionType { get; set; }
+        public InitialPosition InitialPosition { get; set; }
     }
 }
