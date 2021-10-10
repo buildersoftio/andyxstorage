@@ -59,16 +59,23 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private void InitializeConsumerConnection(string tenant, string product, string component, string topic, string consumer)
         {
             string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
-            if (connectors.ContainsKey(consumerKey))
-                return;
-
-            var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
-                product, component, topic, consumer)))
+            try
             {
-                IsProcessorWorking = false
-            };
+                if (connectors.ContainsKey(consumerKey))
+                    return;
 
-            connectors.TryAdd(consumerKey, connector);
+                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
+                    product, component, topic, consumer)))
+                {
+                    IsProcessorWorking = false
+                };
+
+                connectors.TryAdd(consumerKey, connector);
+            }
+            catch (Exception)
+            {
+                logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|{consumerKey}|could_not_create consumer connector");
+            }
         }
 
         private void InitializeConsumerLoggingProcessor()
@@ -111,8 +118,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         Log = $"{DateTime.Now:HH:mm:ss}|CONSUMER#|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED"
                     });
                     logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|{tenant}|{product}|{component}|{topic}|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED");
-
-
                 }
 
                 ConsumerWriter.WriteConsumerConfigFile(tenant, product, component, topic, consumer);
