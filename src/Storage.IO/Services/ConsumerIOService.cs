@@ -277,6 +277,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     logger.LogWarning($"ANDYX-STORAGE#MESSAGING#POINTERS|{consumerKey}|disconnected|connecting|try|{timeOutCounter} of 10");
                     if (timeOutCounter == 10)
                     {
+                        // recreate connection
+                        var consumerKeySplitted = consumerKey.Split('-');
+
+                        logger.LogWarning($"ANDYX-STORAGE#MESSAGING#POINTERS|{consumerKey}|disconnected|reconnecting to pointer file");
+                        connectors[consumerKey].TenantContext = new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerKeySplitted[0],
+                             consumerKeySplitted[1], consumerKeySplitted[2], consumerKeySplitted[3], consumerKeySplitted[4]));
+
                         connectors[consumerKey].IsProcessorWorking = false;
                         return;
                     }
