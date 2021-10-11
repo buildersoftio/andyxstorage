@@ -280,9 +280,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         // recreate connection
                         var consumerKeySplitted = consumerKey.Split('-');
 
+                        connectors.TryRemove(consumerKey, out _);
                         logger.LogWarning($"ANDYX-STORAGE#MESSAGING#POINTERS|{consumerKey}|disconnected|reconnecting to pointer file");
-                        connectors[consumerKey].TenantContext = new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerKeySplitted[0],
-                             consumerKeySplitted[1], consumerKeySplitted[2], consumerKeySplitted[3], consumerKeySplitted[4]));
+                        //connectors[consumerKey].TenantContext = new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerKeySplitted[0],
+                        //     consumerKeySplitted[1], consumerKeySplitted[2], consumerKeySplitted[3], consumerKeySplitted[4]));
 
                         connectors[consumerKey].IsProcessorWorking = false;
                         return;
