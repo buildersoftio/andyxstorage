@@ -71,10 +71,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     return;
 
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
-                    product, component, topic, consumer)), _agentConfiguration.MaxNumber)
-                {
-                    IsProcessorWorking = false
-                };
+                    product, component, topic, consumer)), _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }
@@ -391,10 +388,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 string[] consumerData = consumerKey.Split("-");
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
-    consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _agentConfiguration.MaxNumber)
-                {
-                    IsProcessorWorking = false
-                };
+    consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }

@@ -12,7 +12,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         public Threading.ThreadingPool ThreadingPool { get; set; }
         public ConcurrentQueue<Entities.ConsumerMessage> MessagesBuffer { get; set; }
 
-        public bool IsProcessorWorking { get; set; }
         public int Count { get; set; }
 
         public ConcurrentDictionary<Guid, Entities.ConsumerMessage> BatchConsumerMessagesToMerge { get; set; }
@@ -20,7 +19,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         public ConsumerConnector(TenantContext tenantContext, int agentCount)
         {
             TenantContext = null;
-            IsProcessorWorking = false;
 
             ThreadingPool = new Threading.ThreadingPool(agentCount);
 
@@ -35,7 +33,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
                 tenantContext.ChangeTracker.AutoDetectChangesEnabled = false;
                 tenantContext.Database.EnsureCreated();
             }
-            catch (System.Exception)
+            catch (Exception)
             {
 
             }
