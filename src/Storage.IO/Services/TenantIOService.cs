@@ -57,7 +57,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 if (isTenantReturned == true)
                     TenantWriter.WriteTenantConfigFile(tenant);
                 else
-                    logger.LogError("ANDYX-STORAGE#TENANTS|ERROR|Processing of tenant failed, couldn't Dequeue.");
+                    logger.LogError("Processing of tenant failed, couldn't Dequeue");
             }
             IsTenantConfigFilesWorking = false;
         }
@@ -73,7 +73,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     if (isLogReturned == true)
                         TenantWriter.WriteInTenantLog(tenantLog.Tenant, tenantLog.Log);
                     else
-                        logger.LogError("ANDYX-STORAGE#TENANTS|ERROR|Logging the incoming requests on tenant failed.");
+                        logger.LogError("Logging requests on tenant failed");
                 }
                 catch (Exception)
                 {

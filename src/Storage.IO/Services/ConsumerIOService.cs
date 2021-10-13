@@ -48,13 +48,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
 
             var consumers = TenantReader.ReadAllConsumers();
-            logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|INITIALIZING");
+            logger.LogInformation($"Initializing Consumer Services...");
             foreach (var consumer in consumers)
             {
                 InitializeConsumerConnection(consumer.Tenant, consumer.Product, consumer.Component, consumer.Topic, consumer.Name);
             }
 
-            logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|INITIALIZED");
+            logger.LogInformation($"Consumer Services are initialized");
         }
 
         private void InitializeConsumerConnection(string tenant, string product, string component, string topic, string consumer)
@@ -75,7 +75,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
             catch (Exception)
             {
-                logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|{consumerKey}|could_not_create consumer connector");
+                logger.LogError($"Failed to create consumer connector at '{consumerKey}'");
             }
         }
 
@@ -118,7 +118,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         ConsumerName = consumer.Name,
                         Log = $"{DateTime.Now:HH:mm:ss}|CONSUMER#|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED"
                     });
-                    logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|{tenant}|{product}|{component}|{topic}|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED");
+                    logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is created");
                 }
 
                 ConsumerWriter.WriteConsumerConfigFile(tenant, product, component, topic, consumer);
@@ -135,7 +135,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 });
 
                 InitializeConsumerLoggingProcessor();
-                logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|{tenant}|{product}|{component}|{topic}|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CONNECTED");
+                logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is connected");
+
 
                 return true;
             }
@@ -149,7 +150,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             try
             {
-                logger.LogInformation($"ANDYX-STORAGE#CONSUMERS|{tenant}|{product}|{component}|{topic}|{consumer.Name}|{consumer.Id}|DISCONNECTED");
+                logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is disconnected");
+
                 consumerLogsQueue.Enqueue(new ConsumerLog()
                 {
                     Tenant = tenant,
@@ -255,7 +257,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     }
                 }
                 else
-                    logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|unProcessedMessages");
+                    logger.LogError($"Processing of message failed, couldn't Dequeue un-processed messages");
 
             }
 
@@ -274,16 +276,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     timeOutCounter++;
                     Thread.Sleep(500);
-                    logger.LogWarning($"ANDYX-STORAGE#MESSAGING#POINTERS|{consumerKey}|disconnected|connecting|try|{timeOutCounter} of 10");
+                    logger.LogWarning($"Pointer controller for '{consumerKey}' stopped working, trying to start {timeOutCounter} of 10");
                     if (timeOutCounter == 10)
                     {
                         // recreate connection
                         var consumerKeySplitted = consumerKey.Split('-');
 
                         connectors.TryRemove(consumerKey, out _);
-                        logger.LogWarning($"ANDYX-STORAGE#MESSAGING#POINTERS|{consumerKey}|disconnected|reconnecting to pointer file");
-                        //connectors[consumerKey].TenantContext = new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerKeySplitted[0],
-                        //     consumerKeySplitted[1], consumerKeySplitted[2], consumerKeySplitted[3], consumerKeySplitted[4]));
+                        logger.LogWarning($"Pointer controller for '{consumerKey}' couldn't start. Pointer controller is restarted");
 
                         connectors[consumerKey].IsProcessorWorking = false;
                         return;
@@ -307,7 +307,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         connectors[consumerKey].Count++;
                     }
                     else
-                        logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|TOPIC|{consumerKey}");
+                        logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {consumerKey}");
                 }
                 catch (Exception)
                 {

@@ -28,7 +28,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
             Console.WriteLine("                   Starting Buildersoft Andy X Storage...");
             Console.WriteLine("\n");
-            logger.LogInformation("ANDYX-STORAGE#READY");
+            logger.LogInformation("Andy X Storage is ready");
         }
 
         public void CreateConfigDirectories()

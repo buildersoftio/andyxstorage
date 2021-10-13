@@ -113,16 +113,17 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         {
             if (Directory.Exists(SystemLocations.GetConfigDirectory()) && Directory.Exists(SystemLocations.GetStorageDirectory()))
                 return;
-            _logger.LogInformation("ANDYX-STORAGE#CONFIGURING");
-            _logger.LogInformation($"ANDYX-STORAGE#CONFIGURING|If this process failes make sure that this user have access to write in this location {SystemLocations.GetRootDirectory()}");
+
+            _logger.LogInformation("Importing Configuration");
+            _logger.LogWarning($"If configuration process failes make sure that user have access to write in this location {SystemLocations.GetRootDirectory()}");
 
             _systemIOService.CreateConfigDirectories();
         }
 
         private void InitializeServices()
         {
-            _logger.LogInformation("ANDYX-STORAGE#SERVICES|STARTING");
-            _logger.LogInformation("ANDYX-STORAGE#AGENTS|STARTING");
+            _logger.LogInformation("Starting Services");
+            _logger.LogInformation("Starting Agents");
 
             foreach (var xnode in nodes)
             {
@@ -131,7 +132,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                     for (int i = 0; i < agent.MaxNumber; i++)
                     {
                         string agentId = Guid.NewGuid().ToString();
-                        _logger.LogInformation($"ANDYX-STORAGE#AGENT|{agentId}|CONNECTING");
+                        _logger.LogInformation($"Agent '{agentId}' connection request sent");
                         var nodeEventsService = new XNodeEventService(
                             _logger,
                             agentId,
@@ -147,7 +148,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                 }
                 else
                 {
-                    _logger.LogError($"ANDYX-STORAGE#AGENT|STARTING|LoadBalanced EQ true|UNSUPPORTED");
+                    _logger.LogError($"LoadBalanced property is 'true', this version of storage doesn't support it, please update it to 'false'");
                 }
             }
         }

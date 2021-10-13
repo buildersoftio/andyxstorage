@@ -19,8 +19,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Repository.Connection
             if (agents.ContainsKey(xNode) != true)
                 agents.TryAdd(xNode, new ConcurrentDictionary<string, XNodeEventService>());
 
-            if (agents[xNode].TryAdd(key, service))
-                logger.LogInformation($"ANDYX-STORAGE#AGENT|{key}|STORED");
+            agents[xNode].TryAdd(key, service);
         }
 
         public ConcurrentDictionary<string, ConcurrentDictionary<string, XNodeEventService>> GetAllServices()
