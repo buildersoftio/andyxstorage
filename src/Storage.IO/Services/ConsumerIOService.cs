@@ -20,8 +20,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 {
     public class ConsumerIOService
     {
-        private readonly ILogger<ConsumerIOService> logger;
-        private readonly PartitionConfiguration partitionConfiguration;
+        private readonly ILogger<ConsumerIOService> _logger;
+        private readonly PartitionConfiguration _partitionConfiguration;
+        private readonly AgentConfiguration _agentConfiguration;
 
         private ConcurrentQueue<ConsumerLog> consumerLogsQueue;
         private bool IsConsumerLoggingWorking = false;
@@ -31,12 +32,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private ConcurrentDictionary<string, ConsumerConnector> connectors;
 
 
-        public ConsumerIOService(ILogger<ConsumerIOService> logger, PartitionConfiguration partitionConfiguration)
+        public ConsumerIOService(
+            ILogger<ConsumerIOService> logger,
+            PartitionConfiguration partitionConfiguration,
+            AgentConfiguration agentConfiguration)
         {
-            this.logger = logger;
-            this.partitionConfiguration = partitionConfiguration;
-
+            _logger = logger;
+            _partitionConfiguration = partitionConfiguration;
+            _agentConfiguration = agentConfiguration;
             consumerLogsQueue = new ConcurrentQueue<ConsumerLog>();
+
             unprocessedMessageQueue = new ConcurrentQueue<UnprocessedMessage>();
 
             connectors = new ConcurrentDictionary<string, ConsumerConnector>();
@@ -48,13 +53,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
 
             var consumers = TenantReader.ReadAllConsumers();
-            logger.LogInformation($"Initializing Consumer Services...");
+            _logger.LogInformation($"Initializing Consumer Services...");
             foreach (var consumer in consumers)
             {
                 InitializeConsumerConnection(consumer.Tenant, consumer.Product, consumer.Component, consumer.Topic, consumer.Name);
             }
 
-            logger.LogInformation($"Consumer Services are initialized");
+            _logger.LogInformation($"Consumer Services are initialized");
         }
 
         private void InitializeConsumerConnection(string tenant, string product, string component, string topic, string consumer)
@@ -66,16 +71,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     return;
 
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
-                    product, component, topic, consumer)))
-                {
-                    IsProcessorWorking = false
-                };
+                    product, component, topic, consumer)), _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }
             catch (Exception)
             {
-                logger.LogError($"Failed to create consumer connector at '{consumerKey}'");
+                _logger.LogError($"Failed to create consumer connector at '{consumerKey}'");
             }
         }
 
@@ -118,7 +120,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         ConsumerName = consumer.Name,
                         Log = $"{DateTime.Now:HH:mm:ss}|CONSUMER#|{consumer.Name}|{consumer.SubscriptionType}|{consumer.Id}|CREATED"
                     });
-                    logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is created");
+                    _logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is created");
                 }
 
                 ConsumerWriter.WriteConsumerConfigFile(tenant, product, component, topic, consumer);
@@ -135,7 +137,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 });
 
                 InitializeConsumerLoggingProcessor();
-                logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is connected");
+                _logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is connected");
 
 
                 return true;
@@ -150,7 +152,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             try
             {
-                logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is disconnected");
+                _logger.LogInformation($"Consumer '{consumer.Name}' with subscription type '{consumer.SubscriptionType}' at {tenant}/{product}/{component}/{topic} is disconnected");
 
                 consumerLogsQueue.Enqueue(new ConsumerLog()
                 {
@@ -257,7 +259,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     }
                 }
                 else
-                    logger.LogError($"Processing of message failed, couldn't Dequeue un-processed messages");
+                    _logger.LogError($"Processing of message failed, couldn't Dequeue un-processed messages");
 
             }
 
@@ -268,32 +270,41 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         #region MessageProcessor and Update Pointer
         private void InitializeMessagingProcessor(string consumerKey)
         {
-            if (connectors[consumerKey].IsProcessorWorking != true)
+            if (connectors[consumerKey].ThreadingPool.AreThreadsRunning != true)
             {
-                connectors[consumerKey].IsProcessorWorking = true;
+                connectors[consumerKey].ThreadingPool.AreThreadsRunning = true;
                 int timeOutCounter = 0;
                 while (connectors[consumerKey].TenantContext.Database.CanConnect() != true)
                 {
                     timeOutCounter++;
                     Thread.Sleep(500);
-                    logger.LogWarning($"Pointer controller for '{consumerKey}' stopped working, trying to start {timeOutCounter} of 10");
+                    _logger.LogWarning($"Pointer controller for '{consumerKey}' stopped working, trying to start {timeOutCounter} of 10");
                     if (timeOutCounter == 10)
                     {
                         // recreate connection
                         var consumerKeySplitted = consumerKey.Split('-');
 
                         connectors.TryRemove(consumerKey, out _);
-                        logger.LogWarning($"Pointer controller for '{consumerKey}' couldn't start. Pointer controller is restarted");
+                        _logger.LogWarning($"Pointer controller for '{consumerKey}' couldn't start. Pointer controller is restarted");
 
-                        connectors[consumerKey].IsProcessorWorking = false;
+                        connectors[consumerKey].ThreadingPool.AreThreadsRunning = false;
                         return;
                     }
                 }
-
-                new Thread(() => MessagingProcessor(consumerKey)).Start();
+                // initialize all threads here
+                connectors[consumerKey].ThreadingPool.AreThreadsRunning = true;
+                foreach (var thread in connectors[consumerKey].ThreadingPool.Threads)
+                {
+                    if (thread.Value.IsThreadWorking != true)
+                    {
+                        thread.Value.Thread = new Thread(() => MessagingProcessor(consumerKey, thread.Key));
+                        thread.Value.Thread.Start();
+                        thread.Value.IsThreadWorking = true;
+                    }
+                }
             }
         }
-        private void MessagingProcessor(string consumerKey)
+        private void MessagingProcessor(string consumerKey, Guid threadId)
         {
             while (connectors[consumerKey].MessagesBuffer.IsEmpty != true)
             {
@@ -307,7 +318,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         connectors[consumerKey].Count++;
                     }
                     else
-                        logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {consumerKey}");
+                        _logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {consumerKey}");
                 }
                 catch (Exception)
                 {
@@ -316,7 +327,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
 
             AutoFlushBatchPointers(consumerKey, true);
-            connectors[consumerKey].IsProcessorWorking = false;
+            connectors[consumerKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
         }
 
         private void BulkAddOrUpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
@@ -340,7 +351,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 if (flushAnyway == false)
                 {
-                    if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() >= partitionConfiguration.Size)
+                    if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
                     {
                         connectors[consumerKey].TenantContext.BulkInsertOrUpdate(connectors[consumerKey].BatchConsumerMessagesToMerge.Values.ToList());
                         connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
@@ -366,7 +377,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error occurred during the opening of partition, details={ex.Message}");
+                _logger.LogError($"Error occurred during the opening of partition, details={ex.Message}");
                 return null;
             }
         }
@@ -377,10 +388,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 string[] consumerData = consumerKey.Split("-");
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
-    consumerData[1], consumerData[2], consumerData[3], consumerData[4])))
-                {
-                    IsProcessorWorking = false
-                };
+    consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }

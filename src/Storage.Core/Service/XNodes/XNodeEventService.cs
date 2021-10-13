@@ -16,6 +16,7 @@ using Buildersoft.Andy.X.Storage.Model.Events.Topics.Schemas;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Threading;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 {
@@ -152,6 +153,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
                 if (task.Exception != null)
                 {
                     logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}");
+
+                    // retry connection
+                    Thread.Sleep(3000);
+                    logger.LogWarning($"Agent is reconnecting...");
+                    ConnectAsync();
                 }
             });
         }
