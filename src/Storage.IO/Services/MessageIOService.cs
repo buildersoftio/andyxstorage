@@ -49,13 +49,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     {
                         ProcessMessageToFile(topicKey, message);
                         topicsActiveFiles[topicKey].RowsCount++;
-
-                        // We are commenting the logging for now, in the future logging will be written into log files, in console we will show only mandatory logs and errors.
-                        //logger.LogInformation($"ANDYX-STORAGE#MESSAGES|{message.Tenant}|{message.Product}|{message.Component}|{message.Topic}|msg-{message.Id}|partition_index:{topicsActiveFiles[topicKey].RowsCount}|STORED");
                     }
                     else
-                        logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|Processing of message failed, couldn't Dequeue.|TOPIC|{topicKey}");
-                    // Increase the Counter
+                        logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {topicKey}");
                 }
                 catch (Exception)
                 {
@@ -98,14 +94,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
             // Write as unacked message to consumers
             consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
-
-            // Flushing to disk every 100 messages
-            // testing now for faster flushing
-            //if (topicsActiveFiles[topicKey].RowsCount % 100 == 0)
-            //{
-            //    topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
-            //    topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
-            //}
         }
 
         public void WriteMessageInFile(Message message)

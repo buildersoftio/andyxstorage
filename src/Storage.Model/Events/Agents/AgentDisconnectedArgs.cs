@@ -6,7 +6,7 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Agents
 {
     public class AgentDisconnectedArgs
     {
-        public string Agnet { get; set; }
+        public string Agent { get; set; }
         public Guid AgentId { get; set; }
 
         public ConcurrentDictionary<string, Tenant> Tenants { get; set; }

@@ -22,13 +22,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         {
             xNodeEventService.StorageConnected += XNodeEventService_StorageConnected;
             xNodeEventService.StorageDisconnected += XNodeEventService_StorageDisconnected;
-
-
         }
 
         private void XNodeEventService_StorageDisconnected(Model.Events.Agents.AgentDisconnectedArgs obj)
         {
-            logger.LogInformation($"ANDYX-STORAGE#AGENT|{obj.AgentId}|DISCONNECTED");
+            logger.LogInformation($"Agent '{obj.Agent}' with id '{obj.AgentId}' is disconnected");
 
             foreach (var tenant in obj.Tenants)
             {
@@ -38,10 +36,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_StorageConnected(Model.Events.Agents.AgentConnectedArgs obj)
         {
-            logger.LogInformation($"ANDYX-STORAGE#AGENT|{obj.AgentId}|CONNECTED");
+            logger.LogInformation($"Agent '{obj.Agent}' with id '{obj.AgentId}' is connected");
+
             foreach (var tenant in obj.Tenants)
             {
-                logger.LogInformation($"ANDYX-STORAGE#AGENT|{obj.AgentId}|TENANTS|tenant/{tenant.Key}|CONNECTED");
+                logger.LogInformation($"Agent '{obj.AgentId}' is connected to '{tenant.Key}' tenant");
 
                 // Trying to create new tenants locations in the storage.
                 tenantIOService.TryCreateTenantDirectory(tenant.Key, tenant.Value);

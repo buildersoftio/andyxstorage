@@ -94,7 +94,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
             catch (Exception)
             {
-                logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|{consumerKey}|could_not_read_unknowledge_messages");
+                logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
                 return;
             }
 
@@ -160,7 +160,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
             catch (Exception)
             {
-                logger.LogError($"ANDYX-STORAGE#MESSAGES|ERROR|{consumerKey}|could_not_read_unknowledge_messages");
+                logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
             }
         }
     }

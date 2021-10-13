@@ -59,7 +59,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         Log = $"{DateTime.Now:HH:mm:ss}|PRODUCER#|{producer.Name}|{producer.Id}|CREATED"
                     });
                     ProducerWriter.WriteProducerConfigFile(tenant, product, component, topic, producer);
-                    logger.LogInformation($"ANDYX-STORAGE#PRODUCERS|{tenant}|{product}|{component}|{topic}|{producer.Name}|{producer.Id}|CREATED");
+                    logger.LogInformation($"Producer '{producer.Name}' at {tenant}/{product}/{component}/{topic} is created");
+
                 }
 
                 // Write log file
@@ -74,7 +75,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 });
 
                 InitializeProducerLoggingProcessor();
-                logger.LogInformation($"ANDYX-STORAGE#PRODUCERS|{tenant}|{product}|{component}|{topic}|{producer.Name}|{producer.Id}|CONNECTED");
+                logger.LogInformation($"Producer '{producer.Name}' at {tenant}/{product}/{component}/{topic} is connected");
+
 
                 return true;
             }
@@ -88,7 +90,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             try
             {
-                logger.LogInformation($"ANDYX-STORAGE#PRODUCERS|{tenant}|{product}|{component}|{topic}|{producer.Name}|{producer.Id}|DISCONNECTED");
+                logger.LogInformation($"Producer '{producer.Name}' at {tenant}/{product}/{component}/{topic} is disconnected");
+
                 producerLogsQueue.Enqueue(new ProducerLog()
                 {
                     Tenant = tenant,
