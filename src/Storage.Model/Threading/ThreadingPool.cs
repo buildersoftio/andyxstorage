@@ -21,11 +21,18 @@ namespace Buildersoft.Andy.X.Storage.Model.Threading
             }
         }
 
-        private void Details_UpdateMainThreadRunningStatus()
+        private void Details_UpdateMainThreadRunningStatus(bool isThreadWorking)
         {
             // check if all isThreadWorking eq false, update AreThreadsRunning to false;
             if (Threads.Where(x => x.Value.IsThreadWorking == true).Count() == 0)
             {
+                AreThreadsRunning = false;
+                return;
+            }
+
+            if (isThreadWorking == false)
+            {
+                //Console.WriteLine("REMOVE THIS LINE : Partialy Threads are not in sync - running");
                 AreThreadsRunning = false;
             }
         }
@@ -33,7 +40,7 @@ namespace Buildersoft.Andy.X.Storage.Model.Threading
 
     public class ThreadDetails
     {
-        public delegate void UpdateMainThreadRunningStatusHandler();
+        public delegate void UpdateMainThreadRunningStatusHandler(bool isWorking);
         public event UpdateMainThreadRunningStatusHandler UpdateMainThreadRunningStatus;
 
         public Thread Thread { get; set; }
@@ -48,7 +55,7 @@ namespace Buildersoft.Andy.X.Storage.Model.Threading
             set
             {
                 isThreadWorking = value;
-                UpdateMainThreadRunningStatus?.Invoke();
+                UpdateMainThreadRunningStatus?.Invoke(value);
             }
         }
 
