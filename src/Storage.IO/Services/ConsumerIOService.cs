@@ -239,9 +239,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     if (thread.Value.IsThreadWorking != true)
                     {
-                        thread.Value.Thread = new Thread(() => UnprocessedMessageProcesor(thread.Key));
-                        thread.Value.Thread.Start();
-                        thread.Value.IsThreadWorking = true;
+                        try
+                        {
+                            thread.Value.IsThreadWorking = true;
+                            thread.Value.Thread = new Thread(() => UnprocessedMessageProcesor(thread.Key));
+                            thread.Value.Thread.Start();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Pointer thread '{thread.Key}' failed to restart");
+
+                        }
                     }
                 }
             }
@@ -308,9 +316,16 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     if (thread.Value.IsThreadWorking != true)
                     {
-                        thread.Value.Thread = new Thread(() => MessagingProcessor(consumerKey, thread.Key));
-                        thread.Value.Thread.Start();
-                        thread.Value.IsThreadWorking = true;
+                        try
+                        {
+                            thread.Value.IsThreadWorking = true;
+                            thread.Value.Thread = new Thread(() => MessagingProcessor(consumerKey, thread.Key));
+                            thread.Value.Thread.Start();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"Pointer thread '{thread.Key}' failed to restart");
+                        }
                     }
                 }
             }
@@ -337,8 +352,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 }
             }
 
-            AutoFlushBatchPointers(consumerKey, true);
             connectors[consumerKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
+            AutoFlushBatchPointers(consumerKey, true);
         }
 
         private void BulkAddOrUpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
