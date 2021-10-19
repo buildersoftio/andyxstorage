@@ -8,6 +8,7 @@ using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Logs;
+using Buildersoft.Andy.X.Storage.Model.Threading;
 using EFCore.BulkExtensions;
 using Microsoft.Extensions.Logging;
 using System;
@@ -26,8 +27,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private ConcurrentQueue<ConsumerLog> consumerLogsQueue;
         private bool IsConsumerLoggingWorking = false;
+
         private ConcurrentQueue<UnprocessedMessage> unprocessedMessageQueue;
-        private bool isUnprocessingMessageProcessorWorking = false;
+        private ThreadingPool threadingPoolUnprocessedMessages;
 
         private ConcurrentDictionary<string, ConsumerConnector> connectors;
 
@@ -42,6 +44,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             _agentConfiguration = agentConfiguration;
             consumerLogsQueue = new ConcurrentQueue<ConsumerLog>();
 
+            threadingPoolUnprocessedMessages = new ThreadingPool(agentConfiguration.MaxNumber);
             unprocessedMessageQueue = new ConcurrentQueue<UnprocessedMessage>();
 
             connectors = new ConcurrentDictionary<string, ConsumerConnector>();
@@ -228,14 +231,23 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         #region UnProcessedMessageProcessor
         private void InitializeUnprocessedMessageProcessor()
         {
-            if (isUnprocessingMessageProcessorWorking != true)
+            if (threadingPoolUnprocessedMessages.AreThreadsRunning != true)
             {
-                isUnprocessingMessageProcessorWorking = true;
-                new Thread(() => UnprocessedMessageProcesor()).Start();
+                // initialize all threads here
+                threadingPoolUnprocessedMessages.AreThreadsRunning = true;
+                foreach (var thread in threadingPoolUnprocessedMessages.Threads)
+                {
+                    if (thread.Value.IsThreadWorking != true)
+                    {
+                        thread.Value.Thread = new Thread(() => UnprocessedMessageProcesor(thread.Key));
+                        thread.Value.Thread.Start();
+                        thread.Value.IsThreadWorking = true;
+                    }
+                }
             }
         }
 
-        private void UnprocessedMessageProcesor()
+        private void UnprocessedMessageProcesor(Guid threadId)
         {
             while (unprocessedMessageQueue.IsEmpty != true)
             {
@@ -262,8 +274,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     _logger.LogError($"Processing of message failed, couldn't Dequeue un-processed messages");
 
             }
-
-            isUnprocessingMessageProcessorWorking = false;
+            threadingPoolUnprocessedMessages.Threads[threadId].IsThreadWorking = false;
         }
         #endregion
 
