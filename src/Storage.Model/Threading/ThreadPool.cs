@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.Model.Threading
 {
-    public class ThreadingPool
+    public class ThreadPool
     {
         public ConcurrentDictionary<Guid, ThreadDetails> Threads { get; set; }
         public bool AreThreadsRunning { get; set; }
-        public ThreadingPool(int size)
+        public ThreadPool(int size)
         {
             AreThreadsRunning = false;
             Threads = new ConcurrentDictionary<Guid, ThreadDetails>();
@@ -43,7 +43,7 @@ namespace Buildersoft.Andy.X.Storage.Model.Threading
         public delegate void UpdateMainThreadRunningStatusHandler(bool isWorking);
         public event UpdateMainThreadRunningStatusHandler UpdateMainThreadRunningStatus;
 
-        public Thread Thread { get; set; }
+        public Task Task { get; set; }
 
         private bool isThreadWorking = false;
         public bool IsThreadWorking
@@ -61,7 +61,7 @@ namespace Buildersoft.Andy.X.Storage.Model.Threading
 
         public ThreadDetails()
         {
-            Thread = null;
+            Task = null;
         }
     }
 }
