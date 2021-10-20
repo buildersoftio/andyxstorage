@@ -9,7 +9,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         public TenantContext TenantContext { get; set; }
 
         // Processing Engine
-        public Threading.ThreadingPool ThreadingPool { get; set; }
+        public Threading.ThreadPool ThreadingPool { get; set; }
         public ConcurrentQueue<Entities.ConsumerMessage> MessagesBuffer { get; set; }
 
         public int Count { get; set; }
@@ -20,7 +20,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         {
             TenantContext = null;
 
-            ThreadingPool = new Threading.ThreadingPool(agentCount);
+            ThreadingPool = new Threading.ThreadPool(agentCount);
 
             MessagesBuffer = new ConcurrentQueue<Entities.ConsumerMessage>();
             BatchConsumerMessagesToMerge = new ConcurrentDictionary<Guid, Entities.ConsumerMessage>();

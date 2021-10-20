@@ -16,6 +16,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
@@ -29,7 +30,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private bool IsConsumerLoggingWorking = false;
 
         private ConcurrentQueue<UnprocessedMessage> unprocessedMessageQueue;
-        private ThreadingPool threadingPoolUnprocessedMessages;
+        private Model.Threading.ThreadPool threadingPoolUnprocessedMessages;
 
         private ConcurrentDictionary<string, ConsumerConnector> connectors;
 
@@ -44,7 +45,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             _agentConfiguration = agentConfiguration;
             consumerLogsQueue = new ConcurrentQueue<ConsumerLog>();
 
-            threadingPoolUnprocessedMessages = new ThreadingPool(agentConfiguration.MaxNumber);
+            threadingPoolUnprocessedMessages = new Model.Threading.ThreadPool(agentConfiguration.MaxNumber);
             unprocessedMessageQueue = new ConcurrentQueue<UnprocessedMessage>();
 
             connectors = new ConcurrentDictionary<string, ConsumerConnector>();
@@ -242,13 +243,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         try
                         {
                             thread.Value.IsThreadWorking = true;
-                            thread.Value.Thread = new Thread(() => UnprocessedMessageProcesor(thread.Key));
-                            thread.Value.Thread.Start();
+                            thread.Value.Task = Task.Run(()=>UnprocessedMessageProcesor(thread.Key));
                         }
                         catch (Exception ex)
                         {
                             _logger.LogError($"Pointer thread '{thread.Key}' failed to restart");
-
                         }
                     }
                 }
@@ -319,8 +318,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         try
                         {
                             thread.Value.IsThreadWorking = true;
-                            thread.Value.Thread = new Thread(() => MessagingProcessor(consumerKey, thread.Key));
-                            thread.Value.Thread.Start();
+                            thread.Value.Task = Task.Run(() => MessagingProcessor(consumerKey, thread.Key));
                         }
                         catch (Exception ex)
                         {
