@@ -245,7 +245,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                             thread.Value.IsThreadWorking = true;
                             thread.Value.Task = Task.Run(()=>UnprocessedMessageProcesor(thread.Key));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             _logger.LogError($"Pointer thread '{thread.Key}' failed to restart");
                         }

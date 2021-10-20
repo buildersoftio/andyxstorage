@@ -10,34 +10,57 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
     public class MessageIOService
     {
-        private readonly ILogger<MessageIOService> logger;
-        private readonly PartitionConfiguration partitionConfiguration;
-        private readonly ConsumerIOService consumerIOService;
+        private readonly ILogger<MessageIOService> _logger;
+        private readonly PartitionConfiguration _partitionConfiguration;
+        private readonly AgentConfiguration _agentConfiguration;
+        private readonly ConsumerIOService _consumerIOService;
+
         private ConcurrentDictionary<string, MessageFileGate> topicsActiveFiles;
 
-        public MessageIOService(ILogger<MessageIOService> logger, PartitionConfiguration partitionConfiguration, ConsumerIOService consumerIOService)
+        public MessageIOService(
+            ILogger<MessageIOService> logger,
+            PartitionConfiguration partitionConfiguration,
+            AgentConfiguration agentConfiguration,
+            ConsumerIOService consumerIOService)
         {
-            this.logger = logger;
-            this.partitionConfiguration = partitionConfiguration;
-            this.consumerIOService = consumerIOService;
+            _logger = logger;
+            _partitionConfiguration = partitionConfiguration;
+            _agentConfiguration = agentConfiguration;
+            _consumerIOService = consumerIOService;
+
             topicsActiveFiles = new ConcurrentDictionary<string, MessageFileGate>();
         }
 
         private void InitializeMessagingProcessor(string topicKey)
         {
-            if (topicsActiveFiles[topicKey].IsProcessorWorking != true)
+            if (topicsActiveFiles[topicKey].ThreadPool.AreThreadsRunning != true)
             {
-                topicsActiveFiles[topicKey].IsProcessorWorking = true;
-                new Thread(() => MessagingProcessor(topicKey)).Start();
+                topicsActiveFiles[topicKey].ThreadPool.AreThreadsRunning = true;
+                foreach (var thread in topicsActiveFiles[topicKey].ThreadPool.Threads)
+                {
+                    if (thread.Value.IsThreadWorking != true)
+                    {
+                        try
+                        {
+                            thread.Value.IsThreadWorking = true;
+                            thread.Value.Task = Task.Run(() => MessagingProcessor(topicKey, thread.Key));
+                        }
+                        catch (Exception)
+                        {
+                            _logger.LogError($"Message storing thread '{thread.Key}' failed to restart");
+                        }
+                    }
+                }
             }
         }
 
-        private void MessagingProcessor(string topicKey)
+        private void MessagingProcessor(string topicKey, Guid threadId)
         {
             while (topicsActiveFiles[topicKey].MessagesBuffer.Count > 0)
             {
@@ -51,7 +74,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         topicsActiveFiles[topicKey].RowsCount++;
                     }
                     else
-                        logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {topicKey}");
+                        _logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {topicKey}");
                 }
                 catch (Exception)
                 {
@@ -60,7 +83,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
             // Flush all messages to disk
             AutoFlush(topicKey);
-            topicsActiveFiles[topicKey].IsProcessorWorking = false;
+            topicsActiveFiles[topicKey].ThreadPool.Threads[threadId].IsThreadWorking = false;
         }
 
         private void ProcessMessageToFile(string topicKey, Message message)
@@ -89,11 +112,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             CheckAndChangePartition(message, topicsActiveFiles[topicKey]);
 
             // Write message
-            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLine(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
-            topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLine(message.Id);
+            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLineAsync(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
+            topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLineAsync(message.Id.ToString());
 
             // Write as unacked message to consumers
-            consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
+            _consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
         }
 
         public void WriteMessageInFile(Message message)
@@ -101,7 +124,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             string topicKey = $"{message.Tenant}-{message.Product}-{message.Component}-{message.Topic}";
             if (topicsActiveFiles.ContainsKey(topicKey) != true)
             {
-                var fileGate = new MessageFileGate()
+                var fileGate = new MessageFileGate(_agentConfiguration.MaxNumber)
                 {
                     MessageDetailsFileStream = null,
                     RowsCount = -1
@@ -117,7 +140,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private void CheckAndChangePartition(Message message, MessageFileGate fileGate)
         {
 
-            if (fileGate.RowsCount >= partitionConfiguration.Size)
+            if (fileGate.RowsCount >= _partitionConfiguration.Size)
             {
                 // Close connection with current partition
                 AutoFlush(fileGate);
@@ -161,8 +184,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         }
         public void AutoFlush(MessageFileGate fileGate)
         {
-            fileGate.MessageDetailsStreamWriter.Flush();
-            fileGate.IdKeyStreamWriter.Flush();
+            fileGate.MessageDetailsStreamWriter.FlushAsync();
+            fileGate.IdKeyStreamWriter.FlushAsync();
         }
     }
 
@@ -178,13 +201,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         // Processing Engine
         public ConcurrentQueue<Message> MessagesBuffer { get; set; }
-        public bool IsProcessorWorking { get; set; }
-        public string ActivePartitionFile { get; set; }
+        public Model.Threading.ThreadPool ThreadPool { get; set; }
 
-        public MessageFileGate()
+        public string ActivePartitionFile { get; set; }
+        public MessageFileGate(int agentSize)
         {
+            ThreadPool = new Model.Threading.ThreadPool(agentSize);
+
             MessagesBuffer = new ConcurrentQueue<Message>();
-            IsProcessorWorking = false;
             RowsCount = 0;
         }
     }
