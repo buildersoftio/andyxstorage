@@ -243,7 +243,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         try
                         {
                             thread.Value.IsThreadWorking = true;
-                            thread.Value.Task = Task.Run(()=>UnprocessedMessageProcesor(thread.Key));
+                            thread.Value.Task = Task.Run(() => UnprocessedMessageProcesor(thread.Key));
                         }
                         catch (Exception)
                         {
@@ -256,30 +256,24 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void UnprocessedMessageProcesor(Guid threadId)
         {
-            while (unprocessedMessageQueue.IsEmpty != true)
+            UnprocessedMessage unprocessedMessage;
+
+            while (unprocessedMessageQueue.TryDequeue(out unprocessedMessage))
             {
-                UnprocessedMessage unprocessedMessage;
-                bool isMessageReturned = unprocessedMessageQueue.TryDequeue(out unprocessedMessage);
-                if (isMessageReturned == true)
+                var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{unprocessedMessage.Tenant}-{unprocessedMessage.Product}-{unprocessedMessage.Component}-{unprocessedMessage.Topic}")); //);
+                foreach (var consumerKey in activeConsumerConnectiorKeys)
                 {
-                    var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{unprocessedMessage.Tenant}-{unprocessedMessage.Product}-{unprocessedMessage.Component}-{unprocessedMessage.Topic}")); //);
-                    foreach (var consumerKey in activeConsumerConnectiorKeys)
+                    connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
                     {
-                        connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
-                        {
-                            MessageId = unprocessedMessage.MessageId,
-                            IsAcknowledged = false,
-                            SentDate = DateTime.Now,
-                            PartitionFile = unprocessedMessage.PartitionFile,
-                            PartitionIndex = 0
-                        });
+                        MessageId = unprocessedMessage.MessageId,
+                        IsAcknowledged = false,
+                        SentDate = DateTime.Now,
+                        PartitionFile = unprocessedMessage.PartitionFile,
+                        PartitionIndex = 0
+                    });
 
-                        InitializeMessagingProcessor(consumerKey);
-                    }
+                    InitializeMessagingProcessor(consumerKey);
                 }
-                else
-                    _logger.LogError($"Processing of message failed, couldn't Dequeue un-processed messages");
-
             }
             threadingPoolUnprocessedMessages.Threads[threadId].IsThreadWorking = false;
         }
@@ -330,22 +324,18 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         }
         private void MessagingProcessor(string consumerKey, Guid threadId)
         {
-            while (connectors[consumerKey].MessagesBuffer.IsEmpty != true)
+            Model.Entities.ConsumerMessage message;
+            while (connectors[consumerKey].MessagesBuffer.TryDequeue(out message))
             {
                 try
                 {
-                    Model.Entities.ConsumerMessage message;
-                    bool isMessageReturned = connectors[consumerKey].MessagesBuffer.TryDequeue(out message);
-                    if (isMessageReturned == true)
-                    {
-                        BulkAddOrUpdatePointer(consumerKey, message);
-                        connectors[consumerKey].Count++;
-                    }
-                    else
-                        _logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {consumerKey}");
+ 
+                    BulkAddOrUpdatePointer(consumerKey, message);
+                    connectors[consumerKey].Count++;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    _logger.LogError($"Error on writing the pointers to file details={ex.Message}");
 
                 }
             }

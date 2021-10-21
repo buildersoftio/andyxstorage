@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
@@ -62,23 +61,20 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void MessagingProcessor(string topicKey, Guid threadId)
         {
-            while (topicsActiveFiles[topicKey].MessagesBuffer.Count > 0)
+            Message message;
+
+            while (topicsActiveFiles[topicKey].MessagesBuffer.TryDequeue(out message))
             {
                 try
                 {
-                    Message message;
-                    bool isMessageReturned = topicsActiveFiles[topicKey].MessagesBuffer.TryDequeue(out message);
-                    if (isMessageReturned == true)
-                    {
-                        ProcessMessageToFile(topicKey, message);
-                        topicsActiveFiles[topicKey].RowsCount++;
-                    }
-                    else
-                        _logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {topicKey}");
-                }
-                catch (Exception)
-                {
 
+                    ProcessMessageToFile(topicKey, message);
+                    topicsActiveFiles[topicKey].RowsCount++;
+                }
+                catch (Exception ex)
+                {
+                    //_logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {topicKey}");
+                    _logger.LogError($"Error on writing to file details={ex.Message}");
                 }
             }
             // Flush all messages to disk
@@ -112,8 +108,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             CheckAndChangePartition(message, topicsActiveFiles[topicKey]);
 
             // Write message
-            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLineAsync(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
-            topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLineAsync(message.Id.ToString());
+            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLine(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
+            topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLine(message.Id.ToString());
 
             // Write as unacked message to consumers
             _consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
@@ -124,7 +120,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             string topicKey = $"{message.Tenant}-{message.Product}-{message.Component}-{message.Topic}";
             if (topicsActiveFiles.ContainsKey(topicKey) != true)
             {
-                var fileGate = new MessageFileGate(_agentConfiguration.MaxNumber)
+                //var fileGate = new MessageFileGate(_agentConfiguration.MaxNumber)
+                var fileGate = new MessageFileGate(1)
                 {
                     MessageDetailsFileStream = null,
                     RowsCount = -1
@@ -184,8 +181,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         }
         public void AutoFlush(MessageFileGate fileGate)
         {
-            fileGate.MessageDetailsStreamWriter.FlushAsync();
-            fileGate.IdKeyStreamWriter.FlushAsync();
+            fileGate.MessageDetailsStreamWriter.Flush();
+            fileGate.IdKeyStreamWriter.Flush();
         }
     }
 
