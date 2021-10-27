@@ -1,5 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.IO.Locations;
+using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
@@ -120,7 +121,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                 foreach (string paritionFile in paritionFiles)
                 {
-                    string[] lines = consumerIOService.TryReadAllLines(paritionFile);
+                    string[] lines = FileReader.TryReadAllLines(paritionFile);
                     if (lines == null)
                         continue;
 
@@ -129,7 +130,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                     // If is old consumer send only unacknowledged ones.
                     if (isNewConsumer != true)
-                        rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).Where(r => unackedMessages.Any(u => u.MessageId == r.Id)).ToList();
+                        rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>())
+                            .Where(r => unackedMessages.Any(u => u.MessageId == r.Id))
+                            .ToList();
 
                     foreach (var row in rows)
                     {

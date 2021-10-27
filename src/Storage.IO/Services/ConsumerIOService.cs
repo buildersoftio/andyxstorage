@@ -8,7 +8,6 @@ using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Logs;
-using Buildersoft.Andy.X.Storage.Model.Threading;
 using EFCore.BulkExtensions;
 using Microsoft.Extensions.Logging;
 using System;
@@ -75,7 +74,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     return;
 
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
-                    product, component, topic, consumer)), _agentConfiguration.MaxNumber);
+                    product, component, topic, consumer)), _partitionConfiguration, _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }
@@ -296,6 +295,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                         // recreate connection
                         var consumerKeySplitted = consumerKey.Split('-');
 
+                        connectors[consumerKey].StopAutoFlushPointer();
                         connectors.TryRemove(consumerKey, out _);
                         _logger.LogWarning($"Pointer controller for '{consumerKey}' couldn't start. Pointer controller is restarted");
 
@@ -329,72 +329,35 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 try
                 {
- 
                     BulkAddOrUpdatePointer(consumerKey, message);
                     connectors[consumerKey].Count++;
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error on writing the pointers to file details={ex.Message}");
-
                 }
             }
 
             connectors[consumerKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
-            AutoFlushBatchPointers(consumerKey, true);
         }
 
         private void BulkAddOrUpdatePointer(string consumerKey, Model.Entities.ConsumerMessage message)
         {
-            if (connectors[consumerKey].BatchConsumerMessagesToMerge.ContainsKey(message.MessageId))
+            // check if message is acknowledged
+            if (message.IsAcknowledged == true)
             {
-                if (connectors[consumerKey].BatchConsumerMessagesToMerge[message.MessageId].IsAcknowledged == true)
-                    return;
-
-                connectors[consumerKey].BatchConsumerMessagesToMerge[message.MessageId] = message;
+                connectors[consumerKey].BatchUnacknowledgedConsumerMessagesToMerge.TryRemove(message.MessageId, out _);
+                connectors[consumerKey].BatchAcknowledgedConsumerMessagesToMerge.TryAdd(message.MessageId, message);
             }
             else
-                connectors[consumerKey].BatchConsumerMessagesToMerge.TryAdd(message.MessageId, message);
-
-            AutoFlushBatchPointers(consumerKey);
-        }
-
-        private void AutoFlushBatchPointers(string consumerKey, bool flushAnyway = false)
-        {
-            lock (this)
             {
-                if (flushAnyway == false)
-                {
-                    if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
-                    {
-                        connectors[consumerKey].TenantContext.BulkInsertOrUpdate(connectors[consumerKey].BatchConsumerMessagesToMerge.Values.ToList());
-                        connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
-                    }
-                }
-                else
-                {
-                    if (connectors[consumerKey].BatchConsumerMessagesToMerge.Count() != 0)
-                    {
-                        connectors[consumerKey].TenantContext.BulkInsertOrUpdate(connectors[consumerKey].BatchConsumerMessagesToMerge.Values.ToList());
-                        connectors[consumerKey].BatchConsumerMessagesToMerge.Clear();
-                    }
-                }
+                if (connectors[consumerKey].BatchAcknowledgedConsumerMessagesToMerge.ContainsKey(message.MessageId))
+                    return;
+
+                connectors[consumerKey].BatchUnacknowledgedConsumerMessagesToMerge.TryAdd(message.MessageId, message);
             }
         }
         #endregion
-
-        public string[] TryReadAllLines(string path)
-        {
-            try
-            {
-                return File.ReadAllLines(path);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error occurred during the opening of partition, details={ex.Message}");
-                return null;
-            }
-        }
 
         public ConsumerConnector GetConsumerConnector(string consumerKey)
         {
@@ -402,12 +365,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 string[] consumerData = consumerKey.Split("-");
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
-    consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _agentConfiguration.MaxNumber);
+    consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _partitionConfiguration, _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }
             return connectors[consumerKey];
         }
-
     }
 }
