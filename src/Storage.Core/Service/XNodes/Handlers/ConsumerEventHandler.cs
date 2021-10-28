@@ -5,13 +5,17 @@ using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
+using Buildersoft.Andy.X.Storage.Model.Events.Consumers;
+using Buildersoft.Andy.X.Storage.Model.Files;
 using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 {
@@ -99,7 +103,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 return;
             }
 
-            string[] paritionFiles = Directory.GetFiles(TenantLocations.GetMessageRootDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic));
+            List<MessageFile> partitionFiles = GetPartitionFiles(obj.Tenant, obj.Product, obj.Component, obj.Topic);
+
             bool isNewConsumer = false;
 
             try
@@ -119,52 +124,81 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     }
                 }
 
-                foreach (string paritionFile in paritionFiles)
-                {
-                    string[] lines = FileReader.TryReadAllLines(paritionFile);
-                    if (lines == null)
-                        continue;
-
-                    // Get all rows
-                    var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
-
-                    // If is old consumer send only unacknowledged ones.
-                    if (isNewConsumer != true)
-                        rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>())
-                            .Where(r => unackedMessages.Any(u => u.MessageId == r.Id))
-                            .ToList();
-
-                    foreach (var row in rows)
-                    {
-                        var consumerMessage = new ConsumerMessage()
-                        {
-                            Consumer = obj.ConsumerName,
-                            Message = new Message()
-                            {
-                                Tenant = obj.Tenant,
-                                Product = obj.Product,
-                                Component = obj.Component,
-                                Topic = obj.Topic,
-                                Id = row.Id,
-                                MessageRaw = row.MessageRaw
-                            }
-                        };
-
-                        foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
-                        {
-                            //Transmit the message to the other nodes.
-                            await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
-                        }
-                    }
-
-                    if (isNewConsumer != true)
-                        unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
-                }
+                await AnalysePartitionFiles(obj, partitionFiles, isNewConsumer, unackedMessages);
             }
             catch (Exception)
             {
                 logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
             }
+        }
+
+        private async Task AnalysePartitionFiles(ConsumerConnectedArgs obj, List<MessageFile> partitionFiles, bool isNewConsumer, List<Model.Entities.ConsumerMessage> unackedMessages)
+        {
+            foreach (var paritionFile in partitionFiles)
+            {
+                string[] lines = FileReader.TryReadAllLines(paritionFile.Path);
+                if (lines == null)
+                    continue;
+
+                // Get all rows
+                var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
+
+                // If is old consumer send only unacknowledged ones.
+                if (isNewConsumer != true)
+                    rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>())
+                        .Where(r => unackedMessages.Any(u => u.MessageId == r.Id))
+                        .ToList();
+
+                await AnalyseFileRows(obj, rows);
+
+                if (isNewConsumer != true)
+                    unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
+            }
+        }
+
+        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<MessageRow> rows)
+        {
+            foreach (var row in rows)
+            {
+                var consumerMessage = new ConsumerMessage()
+                {
+                    Consumer = obj.ConsumerName,
+                    Message = new Message()
+                    {
+                        Tenant = obj.Tenant,
+                        Product = obj.Product,
+                        Component = obj.Component,
+                        Topic = obj.Topic,
+                        Id = row.Id,
+                        MessageRaw = row.MessageRaw
+                    }
+                };
+
+                foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                {
+                    //Transmit the message to the other nodes.
+                    await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
+                }
+            }
+        }
+
+        private List<MessageFile> GetPartitionFiles(string tenant, string product, string component, string topic)
+        {
+            List<MessageFile> messages = new List<MessageFile>();
+            string[] partitions = Directory
+               .GetFiles(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic));
+
+            Array.ForEach(partitions, partition =>
+            {
+                string fileName = Path.GetFileNameWithoutExtension(partition);
+                int partitionIndex = Convert.ToInt32(fileName.Split('_').Last());
+
+                messages.Add(new MessageFile() { Path = partition, PartitionIndex = partitionIndex });
+            });
+
+            List<MessageFile> sorted = messages.OrderBy(m => m.PartitionIndex).ToList();
+
+            return sorted;
         }
     }
 }
