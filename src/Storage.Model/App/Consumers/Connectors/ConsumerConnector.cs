@@ -73,14 +73,12 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
                 {
                     if (BatchAcknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
                     {
-                        Console.WriteLine("REMOVE THIS LINE:  Batch Pointer Threads are working, storing acked messages");
                         TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
                         BatchAcknowledgedConsumerMessagesToMerge.Clear();
                     }
                 }
                 else
                 {
-                    Console.WriteLine($"REMOVE THIS LINE:  Batch Pointer Threads are not working.... SIZE BatchAcknowledgedConsumerMessagesToMerge.Count()={BatchAcknowledgedConsumerMessagesToMerge.Count()}");
                     if (BatchAcknowledgedConsumerMessagesToMerge.Count() != 0)
                     {
                         TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
@@ -95,8 +93,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
             CheckIfPointerIsStoredAsAcknowledged();
             lock (BatchUnacknowledgedConsumerMessagesToMerge)
             {
-                Console.WriteLine($"LINE TO REMOVE: Records are unacked before message processed : {BatchUnacknowledgedConsumerMessagesToMerge.Count()}");
-
                 if (flushAnyway == false)
                 {
                     // Flush unacknowledged message
@@ -132,7 +128,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
                         .ConsumerMessages.Where(x => batch.Select(a => a.MessageId)
                         .Contains(x.MessageId) && x.IsAcknowledged == true).ToList();
 
-                Console.WriteLine($"LINE TO REMOVE: >>>>>>>> Records are acked before message processed : {recordsExist.Count()}");
                 recordsExist.ForEach(ex =>
                 {
                     BatchUnacknowledgedConsumerMessagesToMerge.TryRemove(ex.MessageId, out _);
