@@ -49,7 +49,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
             }
 
             _flushPointerTimer = new Timer();
-            _flushPointerTimer.Interval = new TimeSpan(0, 0, 5).TotalMilliseconds;
+            _flushPointerTimer.Interval = new TimeSpan(0, 0, 10).TotalMilliseconds;
             _flushPointerTimer.Elapsed += FlushPointerTimer_Elapsed;
             _flushPointerTimer.AutoReset = true;
             _flushPointerTimer.Start();
@@ -59,35 +59,31 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         {
             _flushPointerTimer.Stop();
 
-            lock (this)
-            {
-                AutoFlushAcknowledgedBatchPointers();
-                AutoFlushUnacknowledgedBatchPointers();
-            }
+            AutoFlushAcknowledgedBatchPointers();
+            AutoFlushUnacknowledgedBatchPointers();
 
             _flushPointerTimer.Start();
         }
 
         private void AutoFlushAcknowledgedBatchPointers()
         {
-            if (ThreadingPool.AreThreadsRunning == true)
+            lock (BatchAcknowledgedConsumerMessagesToMerge)
             {
-                Console.WriteLine($"REMOVE THIS LINE:  Batch Pointer Threads are working.... SIZE BatchAcknowledgedConsumerMessagesToMerge.Count()={BatchAcknowledgedConsumerMessagesToMerge.Count()}");
-                if (BatchAcknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
+                if (ThreadingPool.AreThreadsRunning == true)
                 {
-                    Console.WriteLine("REMOVE THIS LINE:  Batch Pointer Threads are working, storing acked messages");
-                    TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
-                    BatchAcknowledgedConsumerMessagesToMerge.Clear();
+                    if (BatchAcknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
+                    {
+                        TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
+                        BatchAcknowledgedConsumerMessagesToMerge.Clear();
+                    }
                 }
-            }
-            else
-            {
-                Console.WriteLine($"REMOVE THIS LINE:  Batch Pointer Threads are not working.... SIZE BatchAcknowledgedConsumerMessagesToMerge.Count()={BatchAcknowledgedConsumerMessagesToMerge.Count()}");
-                if (BatchAcknowledgedConsumerMessagesToMerge.Count() != 0)
+                else
                 {
-                    Console.WriteLine("REMOVE THIS LINE:  Batch Pointer Threads are not working, storing acked messages");
-                    TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
-                    BatchAcknowledgedConsumerMessagesToMerge.Clear();
+                    if (BatchAcknowledgedConsumerMessagesToMerge.Count() != 0)
+                    {
+                        TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
+                        BatchAcknowledgedConsumerMessagesToMerge.Clear();
+                    }
                 }
             }
         }
@@ -95,24 +91,25 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
         private void AutoFlushUnacknowledgedBatchPointers(bool flushAnyway = false)
         {
             CheckIfPointerIsStoredAsAcknowledged();
-            Console.WriteLine($"LINE TO REMOVE: Records are unacked before message processed : {BatchUnacknowledgedConsumerMessagesToMerge.Count()}");
-
-            if (flushAnyway == false)
+            lock (BatchUnacknowledgedConsumerMessagesToMerge)
             {
-                // Flush unacknowledged message
-                if (BatchUnacknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
+                if (flushAnyway == false)
                 {
-                    TenantContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
-                    BatchUnacknowledgedConsumerMessagesToMerge.Clear();
+                    // Flush unacknowledged message
+                    if (BatchUnacknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
+                    {
+                        TenantContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
+                        BatchUnacknowledgedConsumerMessagesToMerge.Clear();
+                    }
                 }
-            }
-            else
-            {
-                // Flush unacknowledged message
-                if (BatchUnacknowledgedConsumerMessagesToMerge.Count() != 0)
+                else
                 {
-                    TenantContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
-                    BatchUnacknowledgedConsumerMessagesToMerge.Clear();
+                    // Flush unacknowledged message
+                    if (BatchUnacknowledgedConsumerMessagesToMerge.Count() != 0)
+                    {
+                        TenantContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
+                        BatchUnacknowledgedConsumerMessagesToMerge.Clear();
+                    }
                 }
             }
         }
@@ -129,14 +126,11 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
                 // why this is returning alwayse zero, lets try it later...
                 var recordsExist = TenantContext
                         .ConsumerMessages.Where(x => batch.Select(a => a.MessageId)
-                        .Contains(x.MessageId)).ToList();
-
-                Console.WriteLine($"LINE TO REMOVE: >>>>>>>> Records are acked before message processed : {recordsExist.Count()}");
+                        .Contains(x.MessageId) && x.IsAcknowledged == true).ToList();
 
                 recordsExist.ForEach(ex =>
                 {
-                    if (ex.IsAcknowledged == true)
-                        BatchUnacknowledgedConsumerMessagesToMerge.TryRemove(ex.MessageId, out _);
+                    BatchUnacknowledgedConsumerMessagesToMerge.TryRemove(ex.MessageId, out _);
                 });
             }
         }
