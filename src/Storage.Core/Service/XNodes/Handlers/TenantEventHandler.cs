@@ -62,7 +62,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         {
             tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name });
             logger.LogInformation($"Component '{obj.Name}' properties at {obj.Tenant}/{obj.Product} created");
-
         }
 
         private void XNodeEventService_ComponentUpdated(Model.Events.Components.ComponentUpdatedArgs obj)

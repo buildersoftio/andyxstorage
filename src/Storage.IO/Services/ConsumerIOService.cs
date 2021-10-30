@@ -67,7 +67,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void InitializeConsumerConnection(string tenant, string product, string component, string topic, string consumer)
         {
-            string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
+            string consumerKey = $"{tenant}~{product}~{component}~{topic}~{consumer}";
             try
             {
                 if (connectors.ContainsKey(consumerKey))
@@ -178,7 +178,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private string AddConsumerConnectorGetKey(string tenant, string product, string component, string topic, string consumer)
         {
-            string consumerKey = $"{tenant}-{product}-{component}-{topic}-{consumer}";
+            string consumerKey = $"{tenant}~{product}~{component}~{topic}~{consumer}";
 
             InitializeConsumerConnection(tenant, product, component, topic, consumer);
 
@@ -363,7 +363,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             if (connectors.ContainsKey(consumerKey) != true)
             {
-                string[] consumerData = consumerKey.Split("-");
+                string[] consumerData = consumerKey.Split("~");
                 var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
     consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _partitionConfiguration, _agentConfiguration.MaxNumber);
 

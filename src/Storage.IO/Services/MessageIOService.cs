@@ -67,7 +67,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 try
                 {
-
                     ProcessMessageToFile(topicKey, message);
                     topicsActiveFiles[topicKey].RowsCount++;
                 }
@@ -117,10 +116,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public void WriteMessageInFile(Message message)
         {
-            string topicKey = $"{message.Tenant}-{message.Product}-{message.Component}-{message.Topic}";
+            string topicKey = $"{message.Tenant}~{message.Product}~{message.Component}~{message.Topic}";
             if (topicsActiveFiles.ContainsKey(topicKey) != true)
             {
-                //var fileGate = new MessageFileGate(_agentConfiguration.MaxNumber)
                 var fileGate = new MessageFileGate(1)
                 {
                     MessageDetailsFileStream = null,
@@ -136,15 +134,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void CheckAndChangePartition(Message message, MessageFileGate fileGate)
         {
-
             if (fileGate.RowsCount >= _partitionConfiguration.Size)
             {
                 // Close connection with current partition
                 AutoFlush(fileGate);
 
                 fileGate.MessageDetailsStreamWriter.Close();
-                fileGate.MessageDetailsFileStream.Close();
                 fileGate.IdKeyStreamWriter.Close();
+                fileGate.MessageDetailsFileStream.Close();
                 fileGate.IdKeyFileStream.Close();
 
                 Topic topic = TenantReader.ReadTopicConfigFile(message.Tenant, message.Product, message.Component, message.Topic);
@@ -158,11 +155,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 TenantWriter.WriteTopicConfigFile(message.Tenant, message.Product, message.Component, topic);
 
                 string newFileLocation = TenantLocations.GetMessagePartitionFile(message.Tenant, message.Product, message.Component, message.Topic, topic.ActiveMessagePartitionFile);
+
                 // Create File
                 if (File.Exists(newFileLocation) == false)
                     File.Create(newFileLocation).Close();
 
                 fileGate.RowsCount = 0;
+
                 fileGate.MessageDetailsFileStream = new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
                 fileGate.MessageDetailsStreamWriter = new StreamWriter(fileGate.MessageDetailsFileStream);
                 fileGate.ActivePartitionFile = topic.ActiveMessagePartitionFile;
@@ -179,6 +178,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
             topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
         }
+
         public void AutoFlush(MessageFileGate fileGate)
         {
             fileGate.MessageDetailsStreamWriter.Flush();
@@ -194,7 +194,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         public FileStream IdKeyFileStream { get; set; }
         public StreamWriter IdKeyStreamWriter { get; set; }
 
-        public int RowsCount { get; set; }
+        public double RowsCount { get; set; }
 
         // Processing Engine
         public ConcurrentQueue<Message> MessagesBuffer { get; set; }

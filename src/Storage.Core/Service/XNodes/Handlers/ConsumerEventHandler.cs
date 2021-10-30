@@ -79,7 +79,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             consumerIOService.WriteMessageAcknowledged(obj);
         }
 
-        private async void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(Model.Events.Consumers.ConsumerConnectedArgs obj)
+        private async void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(ConsumerConnectedArgs obj)
         {
             int timeoutCounter = 0;
             while (File.Exists(ConsumerLocations.GetConsumerPointerFile(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName)) != true)
@@ -91,7 +91,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     return;
             }
 
-            string consumerKey = $"{obj.Tenant}-{obj.Product}-{obj.Component}-{obj.Topic}-{obj.ConsumerName}";
+            string consumerKey = $"{obj.Tenant}~{obj.Product}~{obj.Component}~{obj.Topic}~{obj.ConsumerName}";
             TenantContext tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
             try
             {
@@ -109,6 +109,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             try
             {
+                // check if connection is open
+                CheckPointerDbConnection(tenantContext, consumerKey);
+
                 var unackedMessages = tenantContext.ConsumerMessages.Where(x => x.IsAcknowledged == false).OrderBy(x => x.SentDate).ToList();
                 if (unackedMessages.Count == 0)
                 {
@@ -126,9 +129,25 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                 await AnalysePartitionFiles(obj, partitionFiles, isNewConsumer, unackedMessages);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
+                logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}; errorDetails = {ex.Message}");
+            }
+        }
+
+        private void CheckPointerDbConnection(TenantContext tenantContext, string consumerKey)
+        {
+            int counter = 0;
+            while (counter != 10)
+            {
+                if (tenantContext.Database.CanConnect())
+                {
+                    logger.LogInformation($"Pointer database for '{consumerKey}' is responding");
+                    break;
+                }
+                Thread.Sleep(1000);
+                counter++;
+                logger.LogError($"Pointer database for {consumerKey} is not responding, trying to connect {counter} of 10");
             }
         }
 

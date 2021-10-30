@@ -209,9 +209,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
                     return true;
                 }
-                Topic fromFile = TenantReader.ReadTopicConfigFile(tenant, product, component, topic.Name);
-                fromFile.Schema = topic.Schema;
-                TenantWriter.WriteTopicConfigFile(tenant, product, component, fromFile);
+
+                // Do not update the topic schema
+                //Topic fromFile = TenantReader.ReadTopicConfigFile(tenant, product, component, topic.Name);
+                //fromFile.Schema = topic.Schema;
+                //TenantWriter.WriteTopicConfigFile(tenant, product, component, fromFile);
 
                 return true;
             }

@@ -1,8 +1,10 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.IO.Services;
+using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 {
@@ -38,6 +40,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Topic = obj.Topic
             });
 
+            await RetransmitMessageToOtherNodes(obj);
+        }
+
+        private async Task RetransmitMessageToOtherNodes(MessageStoredArgs obj)
+        {
             // Transmit the message to other connected XNODES.
             if (xNodeEventService.GetXNodeConnectionRepository().GetAllServices().Count > 1)
             {
