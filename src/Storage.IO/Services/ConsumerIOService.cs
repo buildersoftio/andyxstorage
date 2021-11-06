@@ -8,7 +8,6 @@ using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Buildersoft.Andy.X.Storage.Model.Logs;
-using EFCore.BulkExtensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
