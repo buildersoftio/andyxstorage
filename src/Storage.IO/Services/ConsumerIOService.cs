@@ -259,7 +259,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
             while (unprocessedMessageQueue.TryDequeue(out unprocessedMessage))
             {
-                var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{unprocessedMessage.Tenant}-{unprocessedMessage.Product}-{unprocessedMessage.Component}-{unprocessedMessage.Topic}")); //);
+                var activeConsumerConnectiorKeys = connectors.Keys.Where(x => x.Contains($"{unprocessedMessage.Tenant}~{unprocessedMessage.Product}~{unprocessedMessage.Component}~{unprocessedMessage.Topic}")); //);
                 foreach (var consumerKey in activeConsumerConnectiorKeys)
                 {
                     connectors[consumerKey].MessagesBuffer.Enqueue(new Model.Entities.ConsumerMessage()
@@ -314,7 +314,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                             thread.Value.IsThreadWorking = true;
                             thread.Value.Task = Task.Run(() => MessagingProcessor(consumerKey, thread.Key));
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             _logger.LogError($"Pointer thread '{thread.Key}' failed to restart");
                         }

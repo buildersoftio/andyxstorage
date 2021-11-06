@@ -11,6 +11,7 @@ using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,32 +22,35 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 {
     public class ConsumerEventHandler
     {
-        private readonly ILogger<SystemService> logger;
-        private readonly XNodeEventService xNodeEventService;
-        private readonly ConsumerIOService consumerIOService;
+        private readonly ILogger<SystemService> _logger;
+        private readonly XNodeEventService _xNodeEventService;
+        private readonly ConsumerIOService _consumerIOService;
+        private readonly ConcurrentDictionary<string, Task> _unacknowledgedMessageProcesses;
 
-        public ConsumerEventHandler(ILogger<SystemService> logger,
+        public ConsumerEventHandler(
+            ILogger<SystemService> logger,
             XNodeEventService xNodeEventService,
             ConsumerIOService consumerIOService)
         {
-            this.logger = logger;
-            this.xNodeEventService = xNodeEventService;
-            this.consumerIOService = consumerIOService;
+            _logger = logger;
+            _xNodeEventService = xNodeEventService;
+            _consumerIOService = consumerIOService;
+            _unacknowledgedMessageProcesses = new ConcurrentDictionary<string, Task>();
 
             InitializeEvents();
         }
 
         private void InitializeEvents()
         {
-            xNodeEventService.ConsumerConnected += XNodeEventService_ConsumerConnected;
-            xNodeEventService.ConsumerDisconnected += XNodeEventService_ConsumerDisconnected;
-            xNodeEventService.ConsumerUnacknowledgedMessagesRequested += XNodeEventService_ConsumerUnacknowledgedMessagesRequested;
-            xNodeEventService.MessageAcknowledged += XNodeEventService_MessageAcknowledged;
+            _xNodeEventService.ConsumerConnected += XNodeEventService_ConsumerConnected;
+            _xNodeEventService.ConsumerDisconnected += XNodeEventService_ConsumerDisconnected;
+            _xNodeEventService.ConsumerUnacknowledgedMessagesRequested += XNodeEventService_ConsumerUnacknowledgedMessagesRequested;
+            _xNodeEventService.MessageAcknowledged += XNodeEventService_MessageAcknowledged;
         }
 
-        private void XNodeEventService_ConsumerConnected(Model.Events.Consumers.ConsumerConnectedArgs obj)
+        private void XNodeEventService_ConsumerConnected(ConsumerConnectedArgs obj)
         {
-            consumerIOService.TryCreateConsumerDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Model.App.Consumers.Consumer()
+            _consumerIOService.TryCreateConsumerDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Consumer()
             {
                 Id = obj.Id,
                 Name = obj.ConsumerName,
@@ -60,9 +64,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             });
         }
 
-        private void XNodeEventService_ConsumerDisconnected(Model.Events.Consumers.ConsumerDisconnectedArgs obj)
+        private void XNodeEventService_ConsumerDisconnected(ConsumerDisconnectedArgs obj)
         {
-            consumerIOService.WriteDisconnectedConsumerLog(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Model.App.Consumers.Consumer()
+            _consumerIOService.WriteDisconnectedConsumerLog(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Consumer()
             {
                 Id = obj.Id,
                 Name = obj.ConsumerName,
@@ -72,14 +76,27 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Topic = obj.Topic,
                 CreatedDate = DateTime.Now
             });
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+
+            ReleaseUnacknoledgedMessageTasks(consumerKey);
         }
 
         private void XNodeEventService_MessageAcknowledged(Model.Events.Messages.MessageAcknowledgedArgs obj)
         {
-            consumerIOService.WriteMessageAcknowledged(obj);
+            _consumerIOService.WriteMessageAcknowledged(obj);
         }
 
-        private async void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(ConsumerConnectedArgs obj)
+        private void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(ConsumerConnectedArgs obj)
+        {
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            if (_unacknowledgedMessageProcesses.ContainsKey(consumerKey))
+                return;
+
+            // We are adding the task to the Dictionary, when the task is done
+            _unacknowledgedMessageProcesses.TryAdd(consumerKey, Task.Run(async () => await TransmitUnacknowledgedMessages(obj)));
+        }
+
+        private async Task TransmitUnacknowledgedMessages(ConsumerConnectedArgs obj)
         {
             int timeoutCounter = 0;
             while (File.Exists(ConsumerLocations.GetConsumerPointerFile(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName)) != true)
@@ -91,15 +108,16 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     return;
             }
 
-            string consumerKey = $"{obj.Tenant}~{obj.Product}~{obj.Component}~{obj.Topic}~{obj.ConsumerName}";
-            TenantContext tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            TenantContext tenantContext = _consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
             try
             {
-                tenantContext = consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+                tenantContext = _consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
             }
             catch (Exception)
             {
-                logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
+                _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
+                ReleaseUnacknoledgedMessageTasks(consumerKey);
                 return;
             }
 
@@ -131,8 +149,21 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
             catch (Exception ex)
             {
-                logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}; errorDetails = {ex.Message}");
+                _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}; errorDetails = {ex.Message}");
             }
+
+            ReleaseUnacknoledgedMessageTasks(consumerKey);
+        }
+
+        private void ReleaseUnacknoledgedMessageTasks(string consumerKey)
+        {
+            if (_unacknowledgedMessageProcesses.ContainsKey(consumerKey) != true)
+                return;
+
+            _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey}' as been released");
+
+            _unacknowledgedMessageProcesses[consumerKey].Dispose();
+            _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
         }
 
         private void CheckPointerDbConnection(TenantContext tenantContext, string consumerKey)
@@ -142,12 +173,12 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             {
                 if (tenantContext.Database.CanConnect())
                 {
-                    logger.LogInformation($"Pointer database for '{consumerKey}' is responding");
+                    _logger.LogInformation($"Pointer database for '{consumerKey}' is responding");
                     break;
                 }
                 Thread.Sleep(1000);
                 counter++;
-                logger.LogError($"Pointer database for {consumerKey} is not responding, trying to connect {counter} of 10");
+                _logger.LogError($"Pointer database for {consumerKey} is not responding, trying to connect {counter} of 10");
             }
         }
 
@@ -193,7 +224,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     }
                 };
 
-                foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
                 {
                     //Transmit the message to the other nodes.
                     await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
@@ -218,6 +249,11 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             List<MessageFile> sorted = messages.OrderBy(m => m.PartitionIndex).ToList();
 
             return sorted;
+        }
+
+        private string GenerateConsumerKey(string tenant, string product, string component, string topic, string consumer)
+        {
+            return $"{tenant}~{product}~{component}~{topic}~{consumer}";
         }
     }
 }
