@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
@@ -21,6 +22,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private readonly ConsumerIOService _consumerIOService;
 
         private ConcurrentDictionary<string, MessageFileGate> topicsActiveFiles;
+
+        private Timer messageBuffersController;
 
         public MessageIOService(
             ILogger<MessageIOService> logger,
@@ -34,6 +37,61 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             _consumerIOService = consumerIOService;
 
             topicsActiveFiles = new ConcurrentDictionary<string, MessageFileGate>();
+
+            InitializeMessageBuffersController();
+        }
+
+        private void InitializeMessageBuffersController()
+        {
+            messageBuffersController = new Timer() { Interval = new TimeSpan(0, 5, 0).TotalMilliseconds, AutoReset = true };
+            messageBuffersController.Elapsed += MessageBuffersController_Elapsed;
+            messageBuffersController.Start();
+        }
+
+        public void WriteMessageInFile(Message message)
+        {
+            string topicKey = $"{message.Tenant}~{message.Product}~{message.Component}~{message.Topic}";
+            if (topicsActiveFiles.ContainsKey(topicKey) != true)
+            {
+                var fileGate = new MessageFileGate(1)
+                {
+                    MessageDetailsFileStream = null,
+                    RowsCount = -1
+                };
+
+                topicsActiveFiles.TryAdd(topicKey, fileGate);
+            }
+
+            topicsActiveFiles[topicKey].MessagesBuffer.Enqueue(message);
+            InitializeMessagingProcessor(topicKey);
+        }
+
+        private void MessageBuffersController_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            messageBuffersController.Stop();
+            foreach (var activeTopic in topicsActiveFiles)
+            {
+                if (activeTopic.Value.MessagesBuffer.Count == 0
+                    && activeTopic.Value.MessageDetailsFileStream != null)
+                {
+                    _logger.LogInformation($"Message buffer for '{activeTopic.Key}' is flushed to disk and set to idle");
+                    // Close connection with current partition
+                    AutoFlush(activeTopic.Value);
+
+                    activeTopic.Value.MessageDetailsStreamWriter.Close();
+                    activeTopic.Value.IdKeyStreamWriter.Close();
+                    activeTopic.Value.MessageDetailsFileStream.Close();
+                    activeTopic.Value.IdKeyFileStream.Close();
+
+                    // set all streams to null
+                    activeTopic.Value.MessageDetailsStreamWriter = null;
+                    activeTopic.Value.IdKeyStreamWriter = null;
+                    activeTopic.Value.MessageDetailsFileStream = null;
+                    activeTopic.Value.IdKeyFileStream = null;
+
+                }
+            }
+            messageBuffersController.Start();
         }
 
         private void InitializeMessagingProcessor(string topicKey)
@@ -114,24 +172,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             _consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
         }
 
-        public void WriteMessageInFile(Message message)
-        {
-            string topicKey = $"{message.Tenant}~{message.Product}~{message.Component}~{message.Topic}";
-            if (topicsActiveFiles.ContainsKey(topicKey) != true)
-            {
-                var fileGate = new MessageFileGate(1)
-                {
-                    MessageDetailsFileStream = null,
-                    RowsCount = -1
-                };
-
-                topicsActiveFiles.TryAdd(topicKey, fileGate);
-            }
-
-            topicsActiveFiles[topicKey].MessagesBuffer.Enqueue(message);
-            InitializeMessagingProcessor(topicKey);
-        }
-
         private void CheckAndChangePartition(Message message, MessageFileGate fileGate)
         {
             if (fileGate.RowsCount >= _partitionConfiguration.Size)
@@ -173,13 +213,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             }
         }
 
-        public void AutoFlush(string topicKey)
+        private void AutoFlush(string topicKey)
         {
             topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
             topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
         }
 
-        public void AutoFlush(MessageFileGate fileGate)
+        private void AutoFlush(MessageFileGate fileGate)
         {
             fileGate.MessageDetailsStreamWriter.Flush();
             fileGate.IdKeyStreamWriter.Flush();
