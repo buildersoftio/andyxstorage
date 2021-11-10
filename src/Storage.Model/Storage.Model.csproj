@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net5.0</TargetFramework>
+		<TargetFramework>net6.0</TargetFramework>
 		<RootNamespace>Buildersoft.Andy.X.Storage.Model</RootNamespace>
-		<Version>2.0.3</Version>
+		<Version>2.0.0</Version>
 		<Company>Buildersoft</Company>
 		<Product>Buildersoft Andy</Product>
 		<Authors>Buildersoft</Authors>
