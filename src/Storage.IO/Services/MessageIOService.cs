@@ -102,19 +102,24 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     }
                 }
 
-                foreach (var thread in connectors[topicKey].ThreadingPool.Threads)
+                InitialzeThreads(topicKey);
+            }
+        }
+
+        private void InitialzeThreads(string topicKey)
+        {
+            foreach (var thread in connectors[topicKey].ThreadingPool.Threads)
+            {
+                if (thread.Value.IsThreadWorking != true)
                 {
-                    if (thread.Value.IsThreadWorking != true)
+                    try
                     {
-                        try
-                        {
-                            thread.Value.IsThreadWorking = true;
-                            thread.Value.Task = Task.Run(() => MessagingProcessor(topicKey, thread.Key));
-                        }
-                        catch (Exception)
-                        {
-                            _logger.LogError($"Message storing thread '{thread.Key}' failed to restart");
-                        }
+                        thread.Value.IsThreadWorking = true;
+                        thread.Value.Task = Task.Run(() => MessagingProcessor(topicKey, thread.Key));
+                    }
+                    catch (Exception)
+                    {
+                        _logger.LogError($"Message storing thread '{thread.Key}' failed to restart");
                     }
                 }
             }
@@ -132,7 +137,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 }
                 catch (Exception ex)
                 {
-                    //_logger.LogError($"Processing of message failed, couldn't Dequeue topic message at {topicKey}");
                     _logger.LogError($"Error on writing to file details={ex.Message}");
                 }
             }

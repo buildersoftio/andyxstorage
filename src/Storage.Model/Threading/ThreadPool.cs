@@ -32,7 +32,6 @@ namespace Buildersoft.Andy.X.Storage.Model.Threading
 
             if (isThreadWorking == false)
             {
-                //Console.WriteLine("REMOVE THIS LINE : Partialy Threads are not in sync - running");
                 AreThreadsRunning = false;
             }
         }
