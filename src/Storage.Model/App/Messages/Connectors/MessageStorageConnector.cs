@@ -102,13 +102,5 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages.Connectors
             _flushPointerTimer.Elapsed -= FlushPointerTimer_Elapsed;
             _flushPointerTimer.Stop();
         }
-        public void StopAutoFlushPointer()
-        {
-            _flushPointerTimer.Stop();
-        }
-        public void StartAutoFlushPointer()
-        {
-            _flushPointerTimer.Start();
-        }
     }
 }
