@@ -21,41 +21,8 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages.Connectors
         public ConcurrentQueue<Entities.Message> MessagesBuffer { get; set; }
         public ConcurrentDictionary<Guid, Entities.Message> BatchMessagesToInsert { get; set; }
 
-
-        public MessageStorageConnector(MessageContext messageContext, PartitionConfiguration partitionConfiguration, int agentCount)
-        {
-            _partitionConfiguration = partitionConfiguration;
-
-            MessageContext = null;
-            ThreadingPool = new Threading.ThreadPool(agentCount);
-
-            MessagesBuffer = new ConcurrentQueue<Entities.Message>();
-            BatchMessagesToInsert = new ConcurrentDictionary<Guid, Entities.Message>();
-
-
-            MessageContext = messageContext;
-
-            try
-            {
-                messageContext.ChangeTracker.AutoDetectChangesEnabled = false;
-                messageContext.Database.EnsureCreated();
-            }
-            catch (Exception)
-            {
-
-            }
-
-            _flushPointerTimer = new Timer();
-            _flushPointerTimer.Interval = partitionConfiguration.FlushInterval;
-            _flushPointerTimer.Elapsed += FlushPointerTimer_Elapsed;
-            _flushPointerTimer.AutoReset = true;
-            _flushPointerTimer.Start();
-        }
-
         public MessageStorageConnector(PartitionConfiguration partitionConfiguration, int agentCount)
         {
-            Console.WriteLine($"REMOVE THIS LINE : MessageStorageConnector is initialized");
-
             _partitionConfiguration = partitionConfiguration;
 
             MessageContext = null;
@@ -84,7 +51,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages.Connectors
         {
             try
             {
-                Console.WriteLine($"REMOVE THIS LINE : FLUSHING TO DISK :  BatchMessagesToInsert.Count()={BatchMessagesToInsert.Count()}, MessagesBuffer.Count={MessagesBuffer.Count()}");
                 if (ThreadingPool.AreThreadsRunning == true)
                 {
                     if (BatchMessagesToInsert.Count() >= _partitionConfiguration.SizeInMemory)
@@ -108,7 +74,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages.Connectors
             {
 
             }
-
         }
 
         private void RemoveRegisteredFromBatch(List<Entities.Message> batchToInsert)
@@ -132,11 +97,10 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages.Connectors
             }
         }
 
-        public void StopAutoFlushPointer()
+        public void DisposeAutoFlushPointer()
         {
             _flushPointerTimer.Elapsed -= FlushPointerTimer_Elapsed;
             _flushPointerTimer.Stop();
-
         }
     }
 }
