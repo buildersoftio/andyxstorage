@@ -11,5 +11,6 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages
 
         public Guid Id { get; set; }
         public object MessageRaw { get; set; }
+        public DateTime SentDate { get; set; }
     }
 }

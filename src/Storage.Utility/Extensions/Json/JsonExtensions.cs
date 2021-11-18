@@ -47,6 +47,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
         {
             return (dynamic)(JsonSerializer.Deserialize(jsonMessage, type, new JsonSerializerOptions()
             {
+                IgnoreReadOnlyFields = true,
                 IgnoreNullValues = true,
                 IgnoreReadOnlyProperties = true,
             }));

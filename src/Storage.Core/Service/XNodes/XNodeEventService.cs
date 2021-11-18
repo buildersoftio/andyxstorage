@@ -27,8 +27,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private readonly TenantIOService tenantIOService;
         private readonly ProducerIOService producerIOService;
         private readonly ConsumerIOService consumerIOService;
-        private readonly MessageIOService messageIOService;
-
+        private readonly MessageIOService messageIOService2;
         private HubConnection _connection;
 
         public event Action<AgentConnectedArgs> StorageConnected;
@@ -76,14 +75,14 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             TenantIOService tenantIOService,
             ProducerIOService producerIOService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService)
+            MessageIOService messageIOService2)
         {
             this.logger = logger;
             this.xNodeConnectionRepository = xNodeConnectionRepository;
             this.tenantIOService = tenantIOService;
             this.producerIOService = producerIOService;
             this.consumerIOService = consumerIOService;
-            this.messageIOService = messageIOService;
+            this.messageIOService2 = messageIOService2;
             this.agentId = agentId;
             this.nodeConfig = nodeConfig;
 
@@ -129,7 +128,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
             consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService);
-            messageEventHandler = new MessageEventHandler(logger, this, messageIOService);
+            messageEventHandler = new MessageEventHandler(logger, this, messageIOService2);
         }
 
         public IXNodeConnectionRepository GetXNodeConnectionRepository()

@@ -22,8 +22,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly TenantIOService _tenantIOService;
         private readonly ProducerIOService _producerIOService;
         private readonly ConsumerIOService _consumerIOService;
-        private readonly MessageIOService _messageIOService;
-
+        private readonly MessageIOService _messageIOService2;
         private readonly List<XNodeConfiguration> nodes;
         private readonly DataStorageConfiguration dataStorage;
         private readonly AgentConfiguration agent;
@@ -39,7 +38,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             TenantIOService tenantIOService,
             ProducerIOService producerIOService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService)
+            MessageIOService messageIOService2)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -49,8 +48,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             _tenantIOService = tenantIOService;
             _producerIOService = producerIOService;
             _consumerIOService = consumerIOService;
-            _messageIOService = messageIOService;
-
+            _messageIOService2 = messageIOService2;
             nodes = _serviceProvider.GetService(typeof(List<XNodeConfiguration>)) as List<XNodeConfiguration>;
             dataStorage = _serviceProvider.GetService(typeof(DataStorageConfiguration)) as DataStorageConfiguration;
             agent = _serviceProvider.GetService(typeof(AgentConfiguration)) as AgentConfiguration;
@@ -143,7 +141,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                             _tenantIOService,
                             _producerIOService,
                             _consumerIOService,
-                            _messageIOService);
+                            _messageIOService2);
                     }
                 }
                 else

@@ -168,9 +168,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 if (Directory.Exists(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic.Name)) != true)
                     Directory.CreateDirectory(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic.Name));
 
-                if (File.Exists(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)) == false)
-                    File.Create(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)).Close();
-
                 // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
                 TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
 
@@ -202,9 +199,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
                 if (File.Exists(TenantLocations.GetTopicConfigFile(tenant, product, component, topic.Name)) != true)
                 {
-                    if (File.Exists(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)) == false)
-                        File.Create(TenantLocations.GetMessagePartitionFile(tenant, product, component, topic.Name, topic.ActiveMessagePartitionFile)).Close();
-
                     // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
                     TenantWriter.WriteTopicConfigFile(tenant, product, component, topic);
                     return true;

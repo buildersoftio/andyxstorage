@@ -2,6 +2,7 @@
 {
     public class PartitionConfiguration
     {
-        public int Size { get; set; }
+        public int SizeInMemory { get; set; }
+        public int FlushInterval { get; set; } // its in miliseconds
     }
 }
