@@ -28,6 +28,9 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
 
         public ConsumerConnector(TenantContext tenantContext, PartitionConfiguration partitionConfiguration, int agentCount)
         {
+            Console.WriteLine($"REMOVE THIS LINE : ConsumerConnector is initialized");
+
+
             TenantContext = null;
             ThreadingPool = new Threading.ThreadPool(agentCount);
 
