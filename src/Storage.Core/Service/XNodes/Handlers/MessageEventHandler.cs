@@ -12,14 +12,15 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
     {
         private readonly ILogger<SystemService> logger;
         private readonly XNodeEventService xNodeEventService;
-        private readonly MessageIOService messageIOService;
+        private readonly MessageIOService messageIOService2;
 
-        public MessageEventHandler(ILogger<SystemService> logger, XNodeEventService xNodeEventService, MessageIOService messageIOService)
+        public MessageEventHandler(ILogger<SystemService> logger,
+            XNodeEventService xNodeEventService, 
+            MessageIOService messageIOService2)
         {
             this.logger = logger;
             this.xNodeEventService = xNodeEventService;
-            this.messageIOService = messageIOService;
-
+            this.messageIOService2 = messageIOService2;
             InitializeEvents();
         }
 
@@ -28,16 +29,17 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             xNodeEventService.MessageStored += XNodeEventService_MessageStored;
         }
 
-        private async void XNodeEventService_MessageStored(Model.Events.Messages.MessageStoredArgs obj)
+        private async void XNodeEventService_MessageStored(MessageStoredArgs obj)
         {
-            messageIOService.WriteMessageInFile(new Model.App.Messages.Message()
+            messageIOService2.StoreMessage(new Model.App.Messages.Message()
             {
                 Tenant = obj.Tenant,
                 Id = obj.Id,
                 Component = obj.Component,
                 MessageRaw = obj.MessageRaw,
                 Product = obj.Product,
-                Topic = obj.Topic
+                Topic = obj.Topic,
+                 SentDate = obj.SentDate
             });
 
             await RetransmitMessageToOtherNodes(obj);

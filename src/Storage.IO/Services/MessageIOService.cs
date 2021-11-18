@@ -1,16 +1,14 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
-using Buildersoft.Andy.X.Storage.IO.Readers;
-using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
-using Buildersoft.Andy.X.Storage.Model.App.Topics;
+using Buildersoft.Andy.X.Storage.Model.App.Messages.Connectors;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
+using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
-using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
@@ -21,9 +19,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         private readonly AgentConfiguration _agentConfiguration;
         private readonly ConsumerIOService _consumerIOService;
 
-        private ConcurrentDictionary<string, MessageFileGate> topicsActiveFiles;
-
-        private Timer messageBuffersController;
+        private ConcurrentDictionary<string, MessageStorageConnector> connectors;
 
         public MessageIOService(
             ILogger<MessageIOService> logger,
@@ -36,70 +32,77 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             _agentConfiguration = agentConfiguration;
             _consumerIOService = consumerIOService;
 
-            topicsActiveFiles = new ConcurrentDictionary<string, MessageFileGate>();
-
-            InitializeMessageBuffersController();
+            connectors = new ConcurrentDictionary<string, MessageStorageConnector>();
         }
 
-        private void InitializeMessageBuffersController()
+        public bool InitializeMessageFileConnector(string tenant, string product, string component, string topic, DateTime date)
         {
-            messageBuffersController = new Timer() { Interval = new TimeSpan(0, 5, 0).TotalMilliseconds, AutoReset = true };
-            messageBuffersController.Elapsed += MessageBuffersController_Elapsed;
-            messageBuffersController.Start();
-        }
-
-        public void WriteMessageInFile(Message message)
-        {
-            string topicKey = $"{message.Tenant}~{message.Product}~{message.Component}~{message.Topic}";
-            if (topicsActiveFiles.ContainsKey(topicKey) != true)
+            string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd}";
+            lock (connectors)
             {
-                var fileGate = new MessageFileGate(1)
+                try
                 {
-                    MessageDetailsFileStream = null,
-                    RowsCount = -1
-                };
+                    if (connectors.ContainsKey(topicKey))
+                        return true;
 
-                topicsActiveFiles.TryAdd(topicKey, fileGate);
-            }
+                    var connector = new MessageStorageConnector(_partitionConfiguration, _agentConfiguration.MaxNumber);
+                    connectors.TryAdd(topicKey, connector);
 
-            topicsActiveFiles[topicKey].MessagesBuffer.Enqueue(message);
-            InitializeMessagingProcessor(topicKey);
-        }
-
-        private void MessageBuffersController_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            messageBuffersController.Stop();
-            foreach (var activeTopic in topicsActiveFiles)
-            {
-                if (activeTopic.Value.MessagesBuffer.Count == 0
-                    && activeTopic.Value.MessageDetailsFileStream != null)
+                    return true;
+                }
+                catch (Exception)
                 {
-                    _logger.LogInformation($"Message buffer for '{activeTopic.Key}' is flushed to disk and set to idle");
-                    // Close connection with current partition
-                    AutoFlush(activeTopic.Value);
-
-                    activeTopic.Value.MessageDetailsStreamWriter.Close();
-                    activeTopic.Value.IdKeyStreamWriter.Close();
-                    activeTopic.Value.MessageDetailsFileStream.Close();
-                    activeTopic.Value.IdKeyFileStream.Close();
-
-                    // set all streams to null
-                    activeTopic.Value.MessageDetailsStreamWriter = null;
-                    activeTopic.Value.IdKeyStreamWriter = null;
-                    activeTopic.Value.MessageDetailsFileStream = null;
-                    activeTopic.Value.IdKeyFileStream = null;
-
+                    _logger.LogError($"Failed to create message connector at '{topicKey}', retrying");
+                    return false;
                 }
             }
-            messageBuffersController.Start();
         }
 
-        private void InitializeMessagingProcessor(string topicKey)
+        public void StoreMessage(Message message)
         {
-            if (topicsActiveFiles[topicKey].ThreadPool.AreThreadsRunning != true)
+            string topicKey = AddMessageFileConnectorGetKey(message.Tenant, message.Product, message.Component, message.Topic, message.SentDate);
+
+            connectors[topicKey].MessagesBuffer.Enqueue(new Model.Entities.Message()
             {
-                topicsActiveFiles[topicKey].ThreadPool.AreThreadsRunning = true;
-                foreach (var thread in topicsActiveFiles[topicKey].ThreadPool.Threads)
+                MessageId = message.Id,
+                Payload = message.MessageRaw.ToJsonAndEncrypt(),
+                SentDate = message.SentDate,
+                StoredDate = DateTime.Now
+            });
+
+            InitializeMessagingProcessor(topicKey, message.SentDate);
+        }
+
+        private void InitializeMessagingProcessor(string topicKey, DateTime date)
+        {
+            if (connectors[topicKey].ThreadingPool.AreThreadsRunning != true)
+            {
+
+                connectors[topicKey].ThreadingPool.AreThreadsRunning = true;
+
+                // Wait until is connected to DB.
+                int timeOutCounter = 0;
+                if (connectors[topicKey].MessageContext == null)
+                {
+                    var topicData = topicKey.Split("~");
+                    connectors[topicKey].MessageContext = new MessageContext(MessageLocations.GetMessagePartitionFile(topicData[0],
+                       topicData[1], topicData[2], topicData[3], date));
+                    connectors[topicKey].CreateMessageFile();
+
+                    while (connectors[topicKey].MessageContext.Database.CanConnect() != true)
+                    {
+                        timeOutCounter++;
+                        Thread.Sleep(500);
+                        _logger.LogWarning($"Message Storage Service for '{topicKey}' stopped working, trying to start {timeOutCounter} of 10");
+                        if (timeOutCounter == 10)
+                        {
+                            connectors[topicKey].ThreadingPool.AreThreadsRunning = false;
+                            return;
+                        }
+                    }
+                }
+
+                foreach (var thread in connectors[topicKey].ThreadingPool.Threads)
                 {
                     if (thread.Value.IsThreadWorking != true)
                     {
@@ -119,14 +122,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void MessagingProcessor(string topicKey, Guid threadId)
         {
-            Message message;
 
-            while (topicsActiveFiles[topicKey].MessagesBuffer.TryDequeue(out message))
+            Model.Entities.Message message;
+            while (connectors[topicKey].MessagesBuffer.TryDequeue(out message))
             {
                 try
                 {
-                    ProcessMessageToFile(topicKey, message);
-                    topicsActiveFiles[topicKey].RowsCount++;
+                    connectors[topicKey].BatchMessagesToInsert.TryAdd(message.MessageId, message);
                 }
                 catch (Exception ex)
                 {
@@ -134,119 +136,17 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     _logger.LogError($"Error on writing to file details={ex.Message}");
                 }
             }
-            // Flush all messages to disk
-            AutoFlush(topicKey);
-            topicsActiveFiles[topicKey].ThreadPool.Threads[threadId].IsThreadWorking = false;
+
+            connectors[topicKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
         }
 
-        private void ProcessMessageToFile(string topicKey, Message message)
+        private string AddMessageFileConnectorGetKey(string tenant, string product, string component, string topic, DateTime date)
         {
-            if (topicsActiveFiles[topicKey].MessageDetailsFileStream == null)
-            {
-                // Will create a new FileStream
-                Topic topic = TenantReader.ReadTopicConfigFile(message.Tenant, message.Product, message.Component, message.Topic);
-                string newFileLocation = TenantLocations.GetMessagePartitionFile(message.Tenant, message.Product, message.Component, message.Topic, topic.ActiveMessagePartitionFile);
-                int countRowsInPartition = File.ReadAllLines(newFileLocation).Length;
+            string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd}";
 
-                // Initialize message detail file
-                topicsActiveFiles[topicKey].MessageDetailsFileStream =
-                    new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
-                topicsActiveFiles[topicKey].RowsCount = countRowsInPartition;
+            InitializeMessageFileConnector(tenant, product, component, topic, date);
 
-                topicsActiveFiles[topicKey].MessageDetailsStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].MessageDetailsFileStream);
-                topicsActiveFiles[topicKey].ActivePartitionFile = topic.ActiveMessagePartitionFile;
-                // Initialize IdKey Index File
-                string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
-                topicsActiveFiles[topicKey].IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
-                topicsActiveFiles[topicKey].IdKeyStreamWriter = new StreamWriter(topicsActiveFiles[topicKey].IdKeyFileStream);
-            }
-
-            // Check if the file has partitionSized lines
-            CheckAndChangePartition(message, topicsActiveFiles[topicKey]);
-
-            // Write message
-            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.WriteLine(new MessageRow() { Id = message.Id, MessageRaw = message.MessageRaw }.ToJsonAndEncrypt());
-            topicsActiveFiles[topicKey].IdKeyStreamWriter.WriteLine(message.Id.ToString());
-
-            // Write as unacked message to consumers
-            _consumerIOService.WriteMessageAsUnackedToAllConsumers(message.Tenant, message.Product, message.Component, message.Topic, message.Id, topicsActiveFiles[topicKey].ActivePartitionFile);
-        }
-
-        private void CheckAndChangePartition(Message message, MessageFileGate fileGate)
-        {
-            if (fileGate.RowsCount >= _partitionConfiguration.Size)
-            {
-                // Close connection with current partition
-                AutoFlush(fileGate);
-
-                fileGate.MessageDetailsStreamWriter.Close();
-                fileGate.IdKeyStreamWriter.Close();
-                fileGate.MessageDetailsFileStream.Close();
-                fileGate.IdKeyFileStream.Close();
-
-                Topic topic = TenantReader.ReadTopicConfigFile(message.Tenant, message.Product, message.Component, message.Topic);
-                if (DateTime.Now.ToString("dd-MM-yyyy") != topic.PartitionDate)
-                    topic.PartitionIndex = 0;
-
-                topic.PartitionIndex++;
-                topic.PartitionDate = DateTime.Now.ToString("dd-MM-yyyy");
-                topic.MessagePartitionFiles.Add(topic.ActiveMessagePartitionFile);
-                topic.ActiveMessagePartitionFile = $"msg_{DateTime.Now:MM_yyyy}_partition_{topic.PartitionIndex}.xand";
-                TenantWriter.WriteTopicConfigFile(message.Tenant, message.Product, message.Component, topic);
-
-                string newFileLocation = TenantLocations.GetMessagePartitionFile(message.Tenant, message.Product, message.Component, message.Topic, topic.ActiveMessagePartitionFile);
-
-                // Create File
-                if (File.Exists(newFileLocation) == false)
-                    File.Create(newFileLocation).Close();
-
-                fileGate.RowsCount = 0;
-
-                fileGate.MessageDetailsFileStream = new FileStream(newFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
-                fileGate.MessageDetailsStreamWriter = new StreamWriter(fileGate.MessageDetailsFileStream);
-                fileGate.ActivePartitionFile = topic.ActiveMessagePartitionFile;
-
-                // Initialize IdKey Index File
-                string newIdFileLocation = TenantLocations.GetIdKeyIndexFile(message.Tenant, message.Product, message.Component, message.Topic, $"primary_key_{topic.ActiveMessagePartitionFile}");
-                fileGate.IdKeyFileStream = new FileStream(newIdFileLocation, FileMode.Append, FileAccess.Write, FileShare.None);
-                fileGate.IdKeyStreamWriter = new StreamWriter(fileGate.IdKeyFileStream);
-            }
-        }
-
-        private void AutoFlush(string topicKey)
-        {
-            topicsActiveFiles[topicKey].MessageDetailsStreamWriter.Flush();
-            topicsActiveFiles[topicKey].IdKeyStreamWriter.Flush();
-        }
-
-        private void AutoFlush(MessageFileGate fileGate)
-        {
-            fileGate.MessageDetailsStreamWriter.Flush();
-            fileGate.IdKeyStreamWriter.Flush();
-        }
-    }
-
-    public class MessageFileGate
-    {
-        public FileStream MessageDetailsFileStream { get; set; }
-        public StreamWriter MessageDetailsStreamWriter { get; set; }
-
-        public FileStream IdKeyFileStream { get; set; }
-        public StreamWriter IdKeyStreamWriter { get; set; }
-
-        public double RowsCount { get; set; }
-
-        // Processing Engine
-        public ConcurrentQueue<Message> MessagesBuffer { get; set; }
-        public Model.Threading.ThreadPool ThreadPool { get; set; }
-
-        public string ActivePartitionFile { get; set; }
-        public MessageFileGate(int agentSize)
-        {
-            ThreadPool = new Model.Threading.ThreadPool(agentSize);
-
-            MessagesBuffer = new ConcurrentQueue<Message>();
-            RowsCount = 0;
+            return topicKey;
         }
     }
 }

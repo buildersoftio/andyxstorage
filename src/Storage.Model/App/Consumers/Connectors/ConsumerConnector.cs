@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Storage.Model.Contexts;
 using EFCore.BulkExtensions;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 
@@ -27,6 +28,9 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
 
         public ConsumerConnector(TenantContext tenantContext, PartitionConfiguration partitionConfiguration, int agentCount)
         {
+            Console.WriteLine($"REMOVE THIS LINE : ConsumerConnector is initialized");
+
+
             TenantContext = null;
             ThreadingPool = new Threading.ThreadPool(agentCount);
 
@@ -49,7 +53,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
             }
 
             _flushPointerTimer = new Timer();
-            _flushPointerTimer.Interval = new TimeSpan(0, 0, 10).TotalMilliseconds;
+            _flushPointerTimer.Interval = partitionConfiguration.FlushInterval;
             _flushPointerTimer.Elapsed += FlushPointerTimer_Elapsed;
             _flushPointerTimer.AutoReset = true;
             _flushPointerTimer.Start();
@@ -71,21 +75,31 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
             {
                 if (ThreadingPool.AreThreadsRunning == true)
                 {
-                    if (BatchAcknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
+                    if (BatchAcknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.SizeInMemory)
                     {
-                        TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
-                        BatchAcknowledgedConsumerMessagesToMerge.Clear();
+                        var batchToInsert = new List<Entities.ConsumerMessage>(BatchAcknowledgedConsumerMessagesToMerge.Values);
+                        TenantContext.BulkInsertOrUpdate(batchToInsert);
+                        RemoveRegisteredFromDictionary(BatchAcknowledgedConsumerMessagesToMerge, batchToInsert);
                     }
                 }
                 else
                 {
                     if (BatchAcknowledgedConsumerMessagesToMerge.Count() != 0)
                     {
-                        TenantContext.BulkInsertOrUpdate(BatchAcknowledgedConsumerMessagesToMerge.Values.ToList());
-                        BatchAcknowledgedConsumerMessagesToMerge.Clear();
+                        var batchToInsert = new List<Entities.ConsumerMessage>(BatchAcknowledgedConsumerMessagesToMerge.Values);
+                        TenantContext.BulkInsertOrUpdate(batchToInsert);
+                        RemoveRegisteredFromDictionary(BatchAcknowledgedConsumerMessagesToMerge, batchToInsert);
                     }
                 }
             }
+        }
+
+        private void RemoveRegisteredFromDictionary(ConcurrentDictionary<Guid, Entities.ConsumerMessage> source, List<Entities.ConsumerMessage> toRemoveList)
+        {
+            toRemoveList.ForEach(toRemove =>
+            {
+                source.TryRemove(toRemove.MessageId, out _);
+            });
         }
 
         private void AutoFlushUnacknowledgedBatchPointers(bool flushAnyway = false)
@@ -96,10 +110,12 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
                 if (flushAnyway == false)
                 {
                     // Flush unacknowledged message
-                    if (BatchUnacknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.Size)
+                    if (BatchUnacknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.SizeInMemory)
                     {
+                        var batchToInsert = new List<Entities.ConsumerMessage>(BatchUnacknowledgedConsumerMessagesToMerge.Values);
                         TenantContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
-                        BatchUnacknowledgedConsumerMessagesToMerge.Clear();
+                        RemoveRegisteredFromDictionary(BatchUnacknowledgedConsumerMessagesToMerge, batchToInsert);
+
                     }
                 }
                 else
@@ -107,8 +123,9 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors
                     // Flush unacknowledged message
                     if (BatchUnacknowledgedConsumerMessagesToMerge.Count() != 0)
                     {
+                        var batchToInsert = new List<Entities.ConsumerMessage>(BatchUnacknowledgedConsumerMessagesToMerge.Values);
                         TenantContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
-                        BatchUnacknowledgedConsumerMessagesToMerge.Clear();
+                        RemoveRegisteredFromDictionary(BatchUnacknowledgedConsumerMessagesToMerge, batchToInsert);
                     }
                 }
             }
