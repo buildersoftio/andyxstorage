@@ -27,7 +27,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private readonly TenantIOService tenantIOService;
         private readonly ProducerIOService producerIOService;
         private readonly ConsumerIOService consumerIOService;
-        private readonly MessageIOService messageIOService2;
+        private readonly MessageIOService messageIOService;
         private HubConnection _connection;
 
         public event Action<AgentConnectedArgs> StorageConnected;
@@ -75,14 +75,14 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             TenantIOService tenantIOService,
             ProducerIOService producerIOService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService2)
+            MessageIOService messageIOService)
         {
             this.logger = logger;
             this.xNodeConnectionRepository = xNodeConnectionRepository;
             this.tenantIOService = tenantIOService;
             this.producerIOService = producerIOService;
             this.consumerIOService = consumerIOService;
-            this.messageIOService2 = messageIOService2;
+            this.messageIOService = messageIOService;
             this.agentId = agentId;
             this.nodeConfig = nodeConfig;
 
@@ -127,8 +127,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             agentEventHandler = new AgentEventHandler(logger, this, tenantIOService);
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
-            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService);
-            messageEventHandler = new MessageEventHandler(logger, this, messageIOService2);
+            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService, messageIOService);
+            messageEventHandler = new MessageEventHandler(logger, this, messageIOService);
         }
 
         public IXNodeConnectionRepository GetXNodeConnectionRepository()

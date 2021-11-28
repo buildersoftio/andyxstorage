@@ -144,13 +144,39 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             connectors[topicKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
         }
 
-        private string AddMessageFileConnectorGetKey(string tenant, string product, string component, string topic, DateTime date)
+        public string AddMessageFileConnectorGetKey(string tenant, string product, string component, string topic, DateTime date)
         {
             string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd}";
 
             InitializeMessageFileConnector(tenant, product, component, topic, date);
 
             return topicKey;
+        }
+
+        public MessageContext GetPartitionMessageContext(string topicKey, DateTime date)
+        {
+            // Wait until is connected to DB.
+            int timeOutCounter = 0;
+            if (connectors[topicKey].MessageContext == null)
+            {
+                var topicData = topicKey.Split("~");
+                connectors[topicKey].MessageContext = new MessageContext(MessageLocations.GetMessagePartitionFile(topicData[0],
+                   topicData[1], topicData[2], topicData[3], date));
+                connectors[topicKey].CreateMessageFile();
+
+                while (connectors[topicKey].MessageContext.Database.CanConnect() != true)
+                {
+                    timeOutCounter++;
+                    Thread.Sleep(500);
+                    _logger.LogWarning($"Message Storage Service for '{topicKey}' stopped working, trying to start {timeOutCounter} of 10");
+                    if (timeOutCounter == 10)
+                    {
+                        return null;
+                    }
+                }
+            }
+
+            return connectors[topicKey].MessageContext;
         }
     }
 }
