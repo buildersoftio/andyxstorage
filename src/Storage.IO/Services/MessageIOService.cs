@@ -77,7 +77,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         {
             if (connectors[topicKey].ThreadingPool.AreThreadsRunning != true)
             {
-
                 connectors[topicKey].ThreadingPool.AreThreadsRunning = true;
 
                 // Wait until is connected to DB.
@@ -140,9 +139,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     _logger.LogError($"Error on writing to file details={ex.Message}");
                 }
-
-                connectors[topicKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
             }
+            connectors[topicKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
         }
 
         public string AddMessageFileConnectorGetKey(string tenant, string product, string component, string topic, DateTime date)
