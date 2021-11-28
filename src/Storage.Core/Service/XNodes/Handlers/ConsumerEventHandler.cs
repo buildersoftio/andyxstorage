@@ -184,37 +184,33 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
         }
 
-        private async Task AnalysePartitionFiles(ConsumerConnectedArgs obj, List<MessageFile> partitionFiles, bool isNewConsumer, List<Model.Entities.ConsumerMessage> unackedMessages)
+        private async Task AnalysePartitionFiles(ConsumerConnectedArgs obj, List<MessageFile> partitionFiles, bool isNewConsumer, IEnumerable<Model.Entities.ConsumerMessage> unackedMessages)
         {
             foreach (var paritionFile in partitionFiles)
             {
-                string[] lines = FileReader.TryReadAllLines(paritionFile.Path);
-                if (lines == null)
-                    continue;
-
                 // here we do check partitions db messages....
                 string topicName = _messageIOService.AddMessageFileConnectorGetKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, paritionFile.PartitionDate);
                 var partitionContext = _messageIOService.GetPartitionMessageContext(topicName, paritionFile.PartitionDate);
 
                 // Get all rows
-                //var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
                 var rows = partitionContext.Messages.ToList();
 
                 // If is old consumer send only unacknowledged ones.
                 if (isNewConsumer != true)
                 {
-                    if (unackedMessages.Count == 0)
+                    if (unackedMessages.Count() == 0)
                         return;
 
                     rows = partitionContext.Messages
-                        .Where(r => unackedMessages.Any(u => u.MessageId == r.MessageId))
+                        .Where(r => unackedMessages.Select(s => s.MessageId).Any(u => u == r.MessageId))
+                        .OrderBy(x => x.SentDate)
                         .ToList();
                 }
 
                 await AnalyseFileRows(obj, rows);
 
                 if (isNewConsumer != true)
-                    unackedMessages.RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
+                    unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
             }
         }
 
