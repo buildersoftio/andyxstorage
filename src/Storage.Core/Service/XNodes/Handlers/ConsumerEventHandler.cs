@@ -25,16 +25,19 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         private readonly ILogger<SystemService> _logger;
         private readonly XNodeEventService _xNodeEventService;
         private readonly ConsumerIOService _consumerIOService;
+        private readonly MessageIOService _messageIOService;
         private readonly ConcurrentDictionary<string, Task> _unacknowledgedMessageProcesses;
 
         public ConsumerEventHandler(
             ILogger<SystemService> logger,
             XNodeEventService xNodeEventService,
-            ConsumerIOService consumerIOService)
+            ConsumerIOService consumerIOService,
+            MessageIOService messageIOService)
         {
             _logger = logger;
             _xNodeEventService = xNodeEventService;
             _consumerIOService = consumerIOService;
+            _messageIOService = messageIOService;
             _unacknowledgedMessageProcesses = new ConcurrentDictionary<string, Task>();
 
             InitializeEvents();
@@ -122,7 +125,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
 
             List<MessageFile> partitionFiles = GetPartitionFiles(obj.Tenant, obj.Product, obj.Component, obj.Topic);
-
             bool isNewConsumer = false;
 
             try
@@ -160,7 +162,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             if (_unacknowledgedMessageProcesses.ContainsKey(consumerKey) != true)
                 return;
 
-            _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey}' as been released");
+            _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey}' has been released");
 
             _unacknowledgedMessageProcesses[consumerKey].Dispose();
             _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
@@ -190,23 +192,33 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 if (lines == null)
                     continue;
 
+                // here we do check partitions db messages....
+                string topicName = _messageIOService.AddMessageFileConnectorGetKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, paritionFile.PartitionDate);
+                var partitionContext = _messageIOService.GetPartitionMessageContext(topicName, paritionFile.PartitionDate);
+
                 // Get all rows
-                var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
+                //var rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>()).ToList();
+                var rows = partitionContext.Messages.ToList();
 
                 // If is old consumer send only unacknowledged ones.
                 if (isNewConsumer != true)
-                    rows = lines.Select(line => line.JsonToObjectAndDecrypt<MessageRow>())
-                        .Where(r => unackedMessages.Any(u => u.MessageId == r.Id))
+                {
+                    if (unackedMessages.Count == 0)
+                        return;
+
+                    rows = partitionContext.Messages
+                        .Where(r => unackedMessages.Any(u => u.MessageId == r.MessageId))
                         .ToList();
+                }
 
                 await AnalyseFileRows(obj, rows);
 
                 if (isNewConsumer != true)
-                    unackedMessages.RemoveAll(r => rows.Any(u => u.Id == r.MessageId));
+                    unackedMessages.RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
             }
         }
 
-        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<MessageRow> rows)
+        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows)
         {
             foreach (var row in rows)
             {
@@ -219,8 +231,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         Product = obj.Product,
                         Component = obj.Component,
                         Topic = obj.Topic,
-                        Id = row.Id,
-                        MessageRaw = row.MessageRaw
+                        Id = row.MessageId,
+                        MessageRaw = row.Payload.JsonToObject<object>()
                     }
                 };
 
@@ -236,17 +248,19 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         {
             List<MessageFile> messages = new List<MessageFile>();
             string[] partitions = Directory
-               .GetFiles(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic));
+               .GetFiles(TenantLocations.GetMessageRootDirectory(tenant, product, component, topic), "*.xandy");
 
             Array.ForEach(partitions, partition =>
             {
                 string fileName = Path.GetFileNameWithoutExtension(partition);
-                int partitionIndex = Convert.ToInt32(fileName.Split('_').Last());
+                string[] partitionNameSplited = fileName.Split("_");
 
-                messages.Add(new MessageFile() { Path = partition, PartitionIndex = partitionIndex });
+                var partitionDate = DateTime.Parse($"{partitionNameSplited[2]}-{partitionNameSplited[3]}-{partitionNameSplited[4]}");
+
+                messages.Add(new MessageFile() { Path = partition, PartitionDate = partitionDate });
             });
 
-            List<MessageFile> sorted = messages.OrderBy(m => m.PartitionIndex).ToList();
+            List<MessageFile> sorted = messages.OrderBy(m => m.PartitionDate).ToList();
 
             return sorted;
         }
