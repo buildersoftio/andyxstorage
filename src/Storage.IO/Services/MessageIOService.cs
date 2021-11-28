@@ -127,21 +127,22 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void MessagingProcessor(string topicKey, Guid threadId)
         {
-
+            var topicKeySplitted = topicKey.Split('~');
             Model.Entities.Message message;
             while (connectors[topicKey].MessagesBuffer.TryDequeue(out message))
             {
                 try
                 {
                     connectors[topicKey].BatchMessagesToInsert.TryAdd(message.MessageId, message);
+                    _consumerIOService.WriteMessageAsUnackedToAllConsumers(topicKeySplitted[0], topicKeySplitted[1], topicKeySplitted[2], topicKeySplitted[3], message.MessageId, "-1_partition");
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Error on writing to file details={ex.Message}");
                 }
-            }
 
-            connectors[topicKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
+                connectors[topicKey].ThreadingPool.Threads[threadId].IsThreadWorking = false;
+            }
         }
 
         public string AddMessageFileConnectorGetKey(string tenant, string product, string component, string topic, DateTime date)
