@@ -2,16 +2,16 @@
 
 namespace Buildersoft.Andy.X.Storage.Model.Contexts
 {
-    public class TenantContext : DbContext
+    public class ConsumerPointerContext : DbContext
     {
         private readonly string consumerDbFileLocation;
 
-        public TenantContext()
+        public ConsumerPointerContext()
         {
             // For DI
         }
 
-        public TenantContext(string consumerDbFileLocation)
+        public ConsumerPointerContext(string consumerDbFileLocation)
         {
             this.consumerDbFileLocation = consumerDbFileLocation;
         }

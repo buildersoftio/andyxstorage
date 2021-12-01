@@ -22,7 +22,7 @@ namespace Buildersoft.Andy.X.Storage.App
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddEntityFrameworkSqlite().AddDbContext<TenantContext>();
+            services.AddEntityFrameworkSqlite().AddDbContext<ConsumerPointerContext>();
             // Load configuration
             services.AddConfigurations(Configuration);
             services.AddSerilogLoggingConfiguration(Configuration);
