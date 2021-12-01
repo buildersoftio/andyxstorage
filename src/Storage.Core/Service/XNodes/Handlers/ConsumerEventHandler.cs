@@ -112,14 +112,14 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
 
             string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
-            TenantContext tenantContext = _consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+            ConsumerPointerContext consumerPointerContext = _consumerIOService.GetConsumerConnector(consumerKey).ConsumerPointerContext;
             try
             {
-                tenantContext = _consumerIOService.GetConsumerConnector(consumerKey).TenantContext;
+                consumerPointerContext = _consumerIOService.GetConsumerConnector(consumerKey).ConsumerPointerContext;
             }
             catch (Exception)
             {
-                _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}");
+                _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey.Replace("~", "/")}");
                 ReleaseUnacknoledgedMessageTasks(consumerKey);
                 return;
             }
@@ -130,19 +130,19 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             try
             {
                 // check if connection is open
-                CheckPointerDbConnection(tenantContext, consumerKey);
+                CheckPointerDbConnection(consumerPointerContext, consumerKey);
 
-                var unackedMessages = tenantContext.ConsumerMessages.Where(x => x.IsAcknowledged == false).OrderBy(x => x.SentDate).ToList();
+                var unackedMessages = consumerPointerContext.ConsumerMessages.Where(x => x.IsAcknowledged == false).OrderBy(x => x.SentDate).ToList();
                 if (unackedMessages.Count == 0)
                 {
-                    int totalCount = tenantContext.ConsumerMessages.Count();
+                    int totalCount = consumerPointerContext.ConsumerMessages.Count();
                     if (totalCount == 0)
                     {
                         // Checking if this is a new consumer.
                         if (obj.InitialPosition == InitialPosition.Latest)
                             return;
 
-                        unackedMessages = tenantContext.ConsumerMessages.OrderBy(x => x.SentDate).ToList();
+                        unackedMessages = consumerPointerContext.ConsumerMessages.OrderBy(x => x.SentDate).ToList();
                         isNewConsumer = true;
                     }
                 }
@@ -151,7 +151,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey}; errorDetails = {ex.Message}");
+                _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey.Replace("~", "/")}; errorDetails = {ex.Message}");
             }
 
             ReleaseUnacknoledgedMessageTasks(consumerKey);
@@ -162,25 +162,25 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             if (_unacknowledgedMessageProcesses.ContainsKey(consumerKey) != true)
                 return;
 
-            _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey}' has been released");
+            _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey.Replace("~", "/")}' has been released");
 
             _unacknowledgedMessageProcesses[consumerKey].Dispose();
             _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
         }
 
-        private void CheckPointerDbConnection(TenantContext tenantContext, string consumerKey)
+        private void CheckPointerDbConnection(ConsumerPointerContext tenantContext, string consumerKey)
         {
             int counter = 0;
             while (counter != 10)
             {
                 if (tenantContext.Database.CanConnect())
                 {
-                    _logger.LogInformation($"Pointer database for '{consumerKey}' is responding");
+                    _logger.LogInformation($"Pointer database for '{consumerKey.Replace("~", "/")}' is responding");
                     break;
                 }
                 Thread.Sleep(1000);
                 counter++;
-                _logger.LogError($"Pointer database for {consumerKey} is not responding, trying to connect {counter} of 10");
+                _logger.LogError($"Pointer database for {consumerKey.Replace("~", "/")} is not responding, trying to connect {counter} of 10");
             }
         }
 

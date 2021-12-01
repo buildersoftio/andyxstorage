@@ -9,7 +9,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
         {
             return JsonSerializer.Serialize(obj, typeof(object), new JsonSerializerOptions()
             {
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 IgnoreReadOnlyProperties = true,
             });
         }
@@ -18,7 +18,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
         {
             return JsonSerializer.Serialize(obj, typeof(object), new JsonSerializerOptions()
             {
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 IgnoreReadOnlyProperties = true,
             });
         }
@@ -27,7 +27,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
         {
             return (TClass)(JsonSerializer.Deserialize(jsonMessage, typeof(TClass), new JsonSerializerOptions()
             {
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 IgnoreReadOnlyProperties = true,
                 MaxDepth = 64
             }));
@@ -37,7 +37,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
         {
             return (TClass)(JsonSerializer.Deserialize(jsonMessage, typeof(TClass), new JsonSerializerOptions()
             {
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 IgnoreReadOnlyProperties = true,
                 MaxDepth = 64
             }));
@@ -48,7 +48,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
             return (dynamic)(JsonSerializer.Deserialize(jsonMessage, type, new JsonSerializerOptions()
             {
                 IgnoreReadOnlyFields = true,
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 IgnoreReadOnlyProperties = true,
             }));
         }
@@ -57,7 +57,7 @@ namespace Buildersoft.Andy.X.Storage.Utility.Extensions.Json
         {
             return JsonSerializer.Serialize(obj, typeof(object), new JsonSerializerOptions()
             {
-                IgnoreNullValues = true,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                 IgnoreReadOnlyProperties = true,
                 WriteIndented = true
             });

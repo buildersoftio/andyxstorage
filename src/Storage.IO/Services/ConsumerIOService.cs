@@ -1,8 +1,8 @@
-﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+﻿using Buildersoft.Andy.X.Storage.IO.Connectors;
+using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Writers;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
-using Buildersoft.Andy.X.Storage.Model.App.Consumers.Connectors;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
@@ -53,7 +53,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         private void InitializeAllConsumerConnections()
         {
-
             var consumers = TenantReader.ReadAllConsumers();
             _logger.LogInformation($"Initializing Consumer Services...");
             foreach (var consumer in consumers)
@@ -72,7 +71,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 if (connectors.ContainsKey(consumerKey))
                     return;
 
-                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(tenant,
+                var connector = new ConsumerConnector(_logger, tenant, product, component, topic, consumer, new ConsumerPointerContext(ConsumerLocations.GetConsumerPointerFile(tenant,
                     product, component, topic, consumer)), _partitionConfiguration, _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
@@ -284,7 +283,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 connectors[consumerKey].ThreadingPool.AreThreadsRunning = true;
                 int timeOutCounter = 0;
-                while (connectors[consumerKey].TenantContext.Database.CanConnect() != true)
+                while (connectors[consumerKey].ConsumerPointerContext.Database.CanConnect() != true)
                 {
                     timeOutCounter++;
                     Thread.Sleep(500);
@@ -363,8 +362,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             if (connectors.ContainsKey(consumerKey) != true)
             {
                 string[] consumerData = consumerKey.Split("~");
-                var connector = new ConsumerConnector(new TenantContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
-    consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _partitionConfiguration, _agentConfiguration.MaxNumber);
+                var connector = new ConsumerConnector(_logger, consumerData[0], consumerData[1], consumerData[2], consumerData[3], consumerData[4],
+                    new ConsumerPointerContext(ConsumerLocations.GetConsumerPointerFile(consumerData[0],
+                        consumerData[1], consumerData[2], consumerData[3], consumerData[4])), _partitionConfiguration, _agentConfiguration.MaxNumber);
 
                 connectors.TryAdd(consumerKey, connector);
             }
