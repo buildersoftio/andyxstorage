@@ -18,7 +18,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Writers
                 if (File.Exists(TenantLocations.GetTenantConfigFile(tenant.Name)))
                     File.Delete(TenantLocations.GetTenantConfigFile(tenant.Name));
 
-                File.WriteAllText(TenantLocations.GetTenantConfigFile(tenant.Name), tenant.ToJsonAndEncrypt());
+                File.WriteAllText(TenantLocations.GetTenantConfigFile(tenant.Name), tenant.ToPrettyJson());
                 return true;
             }
             catch (Exception)
@@ -34,7 +34,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Writers
                 if (File.Exists(TenantLocations.GetProductConfigFile(tenant, product.Name)))
                     File.Delete(TenantLocations.GetProductConfigFile(tenant, product.Name));
 
-                File.WriteAllText(TenantLocations.GetProductConfigFile(tenant, product.Name), product.ToJsonAndEncrypt());
+                File.WriteAllText(TenantLocations.GetProductConfigFile(tenant, product.Name), product.ToPrettyJson());
                 return true;
             }
             catch (Exception)
@@ -50,7 +50,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Writers
                 if (File.Exists(TenantLocations.GetComponentConfigFile(tenant, product, component.Name)))
                     File.Delete(TenantLocations.GetComponentConfigFile(tenant, product, component.Name));
 
-                File.WriteAllText(TenantLocations.GetComponentConfigFile(tenant, product, component.Name), component.ToJsonAndEncrypt());
+                File.WriteAllText(TenantLocations.GetComponentConfigFile(tenant, product, component.Name), component.ToPrettyJson());
                 return true;
             }
             catch (Exception)
@@ -66,7 +66,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Writers
                 if (File.Exists(TenantLocations.GetTopicConfigFile(tenant, product, component, topic.Name)))
                     File.Delete(TenantLocations.GetTopicConfigFile(tenant, product, component, topic.Name));
 
-                File.WriteAllText(TenantLocations.GetTopicConfigFile(tenant, product, component, topic.Name), topic.ToJsonAndEncrypt());
+                File.WriteAllText(TenantLocations.GetTopicConfigFile(tenant, product, component, topic.Name), topic.ToPrettyJson());
                 return true;
             }
             catch (Exception)

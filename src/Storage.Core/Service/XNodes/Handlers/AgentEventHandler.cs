@@ -1,6 +1,7 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.IO.Services;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 {
@@ -30,7 +31,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             foreach (var tenant in obj.Tenants)
             {
-                tenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "DISCONNECTED");
+                tenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "disconnected");
             }
         }
 
@@ -44,9 +45,22 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                 // Trying to create new tenants locations in the storage.
                 tenantIOService.TryCreateTenantDirectory(tenant.Key, tenant.Value);
-                tenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "CONNECTED");
-            }
+                tenantIOService.WriteAgentStateInTenantLog(tenant.Key, obj.AgentId.ToString(), "connected");
 
+                tenant.Value.Products.ToList().ForEach(product =>
+                {
+                    tenantIOService.TryCreateProductDirectory(tenant.Key, product.Value);
+
+                    product.Value.Components.ToList().ForEach(component =>
+                    {
+                        tenantIOService.TryCreateComponentDirectory(tenant.Key, product.Key, component.Value);
+                        component.Value.Topics.ToList().ForEach(topic =>
+                        {
+                            tenantIOService.TryCreateTopicDirectory(tenant.Key, product.Key, component.Key, topic.Value);
+                        });
+                    });
+                });
+            }
         }
     }
 }

@@ -220,7 +220,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public void WriteAgentStateInTenantLog(string tenantName, string agentId, string state)
         {
-            string log = $"{DateTime.Now:HH:mm:ss}|ANDYX-STORAGE#AGENTS|{agentId}|{state}";
+            string log = $"{DateTime.Now}\tandyx-storage\tagent with id '{agentId}' is '{state}'";
             tenantLogsQueue.Enqueue(new TenantLog() { Tenant = tenantName, Log = log });
 
             InitializeTenantLoggingProcessor();
