@@ -50,7 +50,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         {
             tenantIOService.TryCreateProductDirectory(obj.Tenant, new Model.App.Products.Product() { Id = obj.Id, Name = obj.Name });
             logger.LogInformation($"Product '{obj.Name}' properties at {obj.Tenant} created");
-
         }
 
         private void XNodeEventService_ProductUpdated(Model.Events.Products.ProductUpdatedArgs obj)
