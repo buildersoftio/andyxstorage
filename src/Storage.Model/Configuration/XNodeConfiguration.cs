@@ -5,6 +5,8 @@
         public string ServiceUrl { get; set; }
         public Subscription Subscription { get; set; }
         public string JwtToken { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 
     public enum Subscription

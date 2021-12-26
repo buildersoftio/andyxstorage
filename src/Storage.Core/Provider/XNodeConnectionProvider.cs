@@ -60,6 +60,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                     }
 
                     option.Headers["x-andyx-storage-name"] = dataStorageConfig.Name;
+
+                    option.Headers["x-andyx-storage-username"] = nodeConfig.Username;
+                    option.Headers["x-andyx-storage-password"] = nodeConfig.Password;
+
                     option.Headers["x-andyx-storage-status"] = dataStorageConfig.Status.ToString();
                     option.Headers["x-andyx-storage-agent-id"] = agentId;
                     option.Headers["x-andyx-storage-agent-max"] = agentConfiguration.MaxNumber.ToString();
