@@ -7,6 +7,9 @@
         public string JwtToken { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
+
+        public string CertificatePath { get; set; }
+        public string CertificatePassword { get; set; }
     }
 
     public enum Subscription
