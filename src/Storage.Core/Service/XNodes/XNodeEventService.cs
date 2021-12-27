@@ -151,7 +151,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             {
                 if (task.Exception != null)
                 {
-                    logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}");
+                    logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}, {string.Join(",", task.Exception.InnerExceptions)}");
 
                     // retry connection
                     Thread.Sleep(3000);
