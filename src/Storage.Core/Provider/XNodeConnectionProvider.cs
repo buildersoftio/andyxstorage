@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Serialization;
 
 namespace Buildersoft.Andy.X.Storage.Core.Provider
@@ -58,11 +60,25 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                             return message;
                         };
                     }
+                    else
+                    {
+                        option.HttpMessageHandlerFactory = (message) =>
+                        {
+                            if (message is HttpClientHandler httpClientHandler)
+                            {
+                                httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                                httpClientHandler.SslProtocols = SslProtocols.Tls12;
+                                httpClientHandler.ClientCertificates.Add(new X509Certificate2(nodeConfig.CertificatePath, nodeConfig.CertificatePassword));
+                            }
+
+                            return message;
+                        };
+                    }
 
                     option.Headers["x-andyx-storage-name"] = dataStorageConfig.Name;
 
                     option.Headers["x-andyx-storage-username"] = nodeConfig.Username;
-                    option.Headers["x-andyx-storage-password"] = nodeConfig.Password;
+                    option.Headers["x-andyx-stWorage-password"] = nodeConfig.Password;
 
                     option.Headers["x-andyx-storage-status"] = dataStorageConfig.Status.ToString();
                     option.Headers["x-andyx-storage-agent-id"] = agentId;
