@@ -37,6 +37,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             Directory.CreateDirectory(SystemLocations.GetConfigNodesDirectory());
             Directory.CreateDirectory(SystemLocations.GetConfigGeoReplicationDirectory());
             Directory.CreateDirectory(SystemLocations.GetConfigCredentialsDirectory());
+            Directory.CreateDirectory(SystemLocations.GetConfigCertificateDirectory());
             Directory.CreateDirectory(SystemLocations.GetStorageDirectory());
             Directory.CreateDirectory(SystemLocations.GetTenantRootDirectory());
         }
