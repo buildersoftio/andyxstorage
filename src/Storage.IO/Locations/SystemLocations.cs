@@ -37,6 +37,11 @@ namespace Buildersoft.Andy.X.Storage.IO.Locations
             return Path.Combine(GetConfigDirectory(), "credentials");
         }
 
+        public static string GetConfigCertificateDirectory()
+        {
+            return Path.Combine(GetConfigDirectory(), "certs");
+        }
+
         public static string GetStorageDirectory()
         {
             return Path.Combine(GetRootDirectory(), "data", "storage");

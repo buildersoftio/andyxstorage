@@ -1,7 +1,9 @@
-﻿using Buildersoft.Andy.X.Storage.Model.Configuration;
+﻿using Buildersoft.Andy.X.Storage.IO.Locations;
+using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -68,7 +70,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                             {
                                 httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
                                 httpClientHandler.SslProtocols = SslProtocols.Tls12;
-                                httpClientHandler.ClientCertificates.Add(new X509Certificate2(nodeConfig.CertificatePath, nodeConfig.CertificatePassword));
+                                var certLocation = Path.Combine(SystemLocations.GetConfigCertificateDirectory(), nodeConfig.CertificateFile);
+                                httpClientHandler.ClientCertificates.Add(new X509Certificate2(certLocation, nodeConfig.CertificatePassword));
                             }
 
                             return message;
@@ -78,7 +81,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                     option.Headers["x-andyx-storage-name"] = dataStorageConfig.Name;
 
                     option.Headers["x-andyx-storage-username"] = nodeConfig.Username;
-                    option.Headers["x-andyx-stWorage-password"] = nodeConfig.Password;
+                    option.Headers["x-andyx-storage-password"] = nodeConfig.Password;
 
                     option.Headers["x-andyx-storage-status"] = dataStorageConfig.Status.ToString();
                     option.Headers["x-andyx-storage-agent-id"] = agentId;
