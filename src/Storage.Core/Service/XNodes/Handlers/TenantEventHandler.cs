@@ -37,13 +37,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_TenantCreated(Model.Events.Tenants.TenantCreatedArgs obj)
         {
-            tenantIOService.TryCreateTenantDirectory(obj.Name, new Model.App.Tenants.Tenant() { Id = obj.Id, Name = obj.Name, DigitalSignature = obj.DigitalSignature });
+            tenantIOService.TryCreateTenantDirectory(obj.Name, new Model.App.Tenants.Tenant() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
             logger.LogInformation($"Tenant '{obj.Name}' properties created");
         }
 
         private void XNodeEventService_TenantUpdated(Model.Events.Tenants.TenantUpdatedArgs obj)
         {
-            // TODO: Implement later
+            // SKIPED for next release v2.1
         }
 
         private void XNodeEventService_ProductCreated(Model.Events.Products.ProductCreatedArgs obj)
@@ -59,24 +59,24 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_ComponentCreated(Model.Events.Components.ComponentCreatedArgs obj)
         {
-            tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name });
+            tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
             logger.LogInformation($"Component '{obj.Name}' properties at {obj.Tenant}/{obj.Product} created");
         }
 
         private void XNodeEventService_ComponentUpdated(Model.Events.Components.ComponentUpdatedArgs obj)
         {
-            tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name });
+            tenantIOService.TryCreateComponentDirectory(obj.Tenant, obj.Product, new Model.App.Components.Component() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
         }
 
         private void XNodeEventService_TopicCreated(Model.Events.Topics.TopicCreatedArgs obj)
         {
-            tenantIOService.TryCreateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Schema = obj.Schema });
+            tenantIOService.TryCreateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
             logger.LogInformation($"Topic '{obj.Name}' properties at {obj.Tenant}/{obj.Product}/{obj.Component} created");
         }
 
         private void XNodeEventService_TopicUpdated(Model.Events.Topics.TopicUpdatedArgs obj)
         {
-            tenantIOService.TryUpdateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Schema = obj.Schema });
+            tenantIOService.TryUpdateTopicDirectory(obj.Tenant, obj.Product, obj.Component, new Model.App.Topics.Topic() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
         }
     }
 }

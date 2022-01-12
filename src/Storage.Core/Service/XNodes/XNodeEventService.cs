@@ -12,7 +12,6 @@ using Buildersoft.Andy.X.Storage.Model.Events.Producers;
 using Buildersoft.Andy.X.Storage.Model.Events.Products;
 using Buildersoft.Andy.X.Storage.Model.Events.Tenants;
 using Buildersoft.Andy.X.Storage.Model.Events.Topics;
-using Buildersoft.Andy.X.Storage.Model.Events.Topics.Schemas;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
@@ -44,7 +43,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         public event Action<TopicCreatedArgs> TopicCreated;
         public event Action<TopicUpdatedArgs> TopicUpdated;
-        public event Action<SchemaUpdatedArgs> SchemaUpdated;
 
         public event Action<MessageStoredArgs> MessageStored;
         public event Action<MessageAcknowledgedArgs> MessageAcknowledged;
@@ -103,7 +101,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
             _connection.On<TopicCreatedArgs>("TopicCreated", topicCreated => TopicCreated?.Invoke(topicCreated));
             _connection.On<TopicUpdatedArgs>("TopicUpdated", topicUpdated => TopicUpdated?.Invoke(topicUpdated));
-            _connection.On<SchemaUpdatedArgs>("SchemaUpdated", schemaUpdated => SchemaUpdated?.Invoke(schemaUpdated));
 
             _connection.On<ProducerConnectedArgs>("ProducerConnected", producerConnected => ProducerConnected?.Invoke(producerConnected));
             _connection.On<ProducerDisconnectedArgs>("ProducerDisconnected", producerDisconnected => ProducerDisconnected?.Invoke(producerDisconnected));

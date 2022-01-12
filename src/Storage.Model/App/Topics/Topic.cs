@@ -14,7 +14,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Topics
         public ConcurrentDictionary<string, Producer> Producers { get; set; }
         public ConcurrentDictionary<string, Consumer> Consumers { get; set; }
 
-        public Schema Schema { get; set; }
+        public TopicSettings Settings { get; set; }
 
         public Topic()
         {
@@ -22,21 +22,7 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Topics
             Producers = new ConcurrentDictionary<string, Producer>();
             Consumers = new ConcurrentDictionary<string, Consumer>();
 
-            Schema = new Schema();
-        }
-    }
-
-    public class Schema
-    {
-        public string Name { get; set; }
-        public bool IsSchemaValidated { get; set; }
-        public string SchemaRaw { get; set; }
-        public int Version { get; set; }
-
-        public Schema()
-        {
-            Version = 0;
-            IsSchemaValidated = false;
+            Settings = new TopicSettings();
         }
     }
 }
