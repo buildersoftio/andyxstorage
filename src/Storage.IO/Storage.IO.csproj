@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Buildersoft.Andy.X.Storage.IO</RootNamespace>
+    <Version>2.0.0</Version>
+    <Company>Buildersoft</Company>
+    <Product>Buildersoft Andy</Product>
+    <Authors>Buildersoft</Authors>
+    <Description>Buildersoft Andy X is a distributed messaging system. This system will empower developers to move into Event Driven Systems. Andy X is a multi-tenant system.</Description>
+    <Copyright>Copyright © Buildersoft 2022</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.BulkExtensions" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Storage.Model\Storage.Model.csproj" />
+    <ProjectReference Include="..\Storage.Utility\Storage.Utility.csproj" />
+  </ItemGroup>
+
+</Project>

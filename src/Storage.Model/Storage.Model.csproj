@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<RootNamespace>Buildersoft.Andy.X.Storage.Model</RootNamespace>
+		<Version>2.0.0</Version>
+		<Company>Buildersoft</Company>
+		<Product>Buildersoft Andy</Product>
+		<Authors>Buildersoft</Authors>
+		<Description>Buildersoft Andy X is a distributed messaging system. This system will empower developers to move into Event Driven Systems. Andy X is a multi-tenant system.</Description>
+		<Copyright>Copyright © Buildersoft 2022</Copyright>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.0" />
+		<PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
+		<PackageReference Include="EFCore.BulkExtensions" Version="6.0.1" />
+	</ItemGroup>
+
+</Project>
