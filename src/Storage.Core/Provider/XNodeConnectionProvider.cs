@@ -48,8 +48,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                 })
                 .WithUrl($"{serviceUrl}/realtime/v2/storage", option =>
                 {
-                    // TODO: Implement Authorization
-                    // option.Headers["Authorization"] = $"Bearer {nodeConfig.JwtToken}";
 
                     var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
                     if (env == "Development")

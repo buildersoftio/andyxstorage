@@ -11,6 +11,7 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Topics
 
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public Schema Schema { get; set; }
+
+        public TopicSettings Settings { get; set; }
     }
 }
