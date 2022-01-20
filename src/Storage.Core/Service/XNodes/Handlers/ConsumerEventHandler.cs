@@ -193,7 +193,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 var partitionContext = _messageIOService.GetPartitionMessageContext(topicName, paritionFile.PartitionDate);
 
                 // Get all rows
-                var rows = partitionContext.Messages.ToList();
+                var rows = partitionContext.Messages.OrderBy(x => x.SentDate).ToList();
 
                 // If is old consumer send only unacknowledged ones.
                 if (isNewConsumer != true)
