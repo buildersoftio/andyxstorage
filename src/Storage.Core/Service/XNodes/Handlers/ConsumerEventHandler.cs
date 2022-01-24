@@ -228,6 +228,9 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         Component = obj.Component,
                         Topic = obj.Topic,
                         Id = row.MessageId,
+                        
+                        SentDate = row.SentDate,
+
                         MessageRaw = row.Payload.JsonToObject<object>()
                     }
                 };
