@@ -207,16 +207,17 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         .ToList();
                 }
 
-                await AnalyseFileRows(obj, rows, paritionFile.PartitionDate);
+                await AnalyseFileRows(obj, rows, paritionFile.PartitionDate, isNewConsumer);
 
                 if (isNewConsumer != true)
                     unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
             }
         }
 
-        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows, DateTime partitionDate)
+        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows, DateTime partitionDate, bool isNewConsumer = false)
         {
-            CachePointers(obj, rows, partitionDate);
+            if (isNewConsumer == true)
+                CachePointers(obj, rows, partitionDate);
 
             foreach (var row in rows)
             {
@@ -230,7 +231,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         Component = obj.Component,
                         Topic = obj.Topic,
                         Id = row.MessageId,
-                        
+
                         SentDate = row.SentDate,
 
                         MessageRaw = row.Payload.JsonToObject<object>()
