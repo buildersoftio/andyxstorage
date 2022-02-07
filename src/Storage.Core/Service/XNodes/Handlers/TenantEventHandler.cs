@@ -43,7 +43,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private void XNodeEventService_TenantUpdated(Model.Events.Tenants.TenantUpdatedArgs obj)
         {
-            // SKIPED for next release v2.1
+            tenantIOService.TryUpdateTenantDirectory(obj.Name, new Model.App.Tenants.Tenant() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
+            logger.LogInformation($"Tenant '{obj.Name}' settings updated");
         }
 
         private void XNodeEventService_ProductCreated(Model.Events.Products.ProductCreatedArgs obj)
