@@ -184,7 +184,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         }
 
         // Acknowledgement of messages
-        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message, string partitionFile = "none")
+        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message, string partitionFile = "no-index")
         {
             string consumerKey = AddConsumerConnectorGetKey(message.Tenant, message.Product, message.Component, message.Topic, message.Consumer);
 

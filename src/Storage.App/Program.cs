@@ -25,9 +25,11 @@ namespace Storage.App
             if (Environment.GetEnvironmentVariable("ANDYX_CERTIFICATE_DEFAULT_PATH") != null)
                 Environment.SetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Path", Environment.GetEnvironmentVariable("ANDYX_CERTIFICATE_DEFAULT_PATH"));
 
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_URLS") == "")
-                Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://+:443;http://+:80");
 
+            if (Environment.GetEnvironmentVariable("ANDYX_URLS") != null)
+                Environment.SetEnvironmentVariable("ASPNETCORE_URLS", Environment.GetEnvironmentVariable("ANDYX_URLS"));
+            else
+                Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://+:443;http://+:80");
 
             try
             {

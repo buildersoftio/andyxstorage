@@ -207,15 +207,17 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         .ToList();
                 }
 
-                await AnalyseFileRows(obj, rows);
+                await AnalyseFileRows(obj, rows, paritionFile.PartitionDate);
 
                 if (isNewConsumer != true)
                     unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
             }
         }
 
-        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows)
+        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows, DateTime partitionDate)
         {
+            CachePointers(obj, rows, partitionDate);
+
             foreach (var row in rows)
             {
                 var consumerMessage = new ConsumerMessage()
@@ -240,6 +242,26 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     //Transmit the message to the other nodes.
                     await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
                 }
+            }
+        }
+
+        private void CachePointers(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows, DateTime partitionDate)
+        {
+            // Unacknowledge message, add to the pointer, and send
+            _logger.LogInformation($"Pointers are caching for {obj.ConsumerName}");
+            for (int i = 0; i < rows.Count; i++)
+            {
+                _consumerIOService.WriteMessageAcknowledged(new Model.Events.Messages.MessageAcknowledgedArgs()
+                {
+                    Tenant = obj.Tenant,
+                    Product = obj.Product,
+                    Component = obj.Component,
+                    Topic = obj.Topic,
+                    Consumer = obj.ConsumerName,
+                    IsAcknowledged = false,
+                    MessageId = rows[i].MessageId,
+                },
+                partitionDate.ToString("yyyy-MM-dd"));
             }
         }
 
