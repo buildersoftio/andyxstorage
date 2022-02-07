@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.IO.Services
 {
@@ -36,7 +36,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             if (IsTenantConfigFilesWorking != true)
             {
                 IsTenantConfigFilesWorking = true;
-                new Thread(() => TenantConfigiFileProcessor()).Start();
+                new Task(() => TenantConfigiFileProcessor()).Start();
             }
         }
         private void InitializeTenantLoggingProcessor()
@@ -44,7 +44,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             if (IsTenantLoggingWorking != true)
             {
                 IsTenantLoggingWorking = true;
-                new Thread(() => TenantLoggingProcessor()).Start();
+                new Task(() => TenantLoggingProcessor()).Start();
             }
         }
 
@@ -109,6 +109,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 return false;
             }
+        }
+
+        public bool TryUpdateTenantDirectory(string tenantName, Tenant tenantDetails)
+        {
+            Tenant TenantIOReader
+            return true;
         }
 
         public bool TryCreateProductDirectory(string tenant, Product product)

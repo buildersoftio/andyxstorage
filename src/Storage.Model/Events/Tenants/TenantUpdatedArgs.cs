@@ -5,7 +5,15 @@ namespace Buildersoft.Andy.X.Storage.Model.Events.Tenants
 {
     public class TenantUpdatedArgs
     {
-        public Guid TenantId { get; set; }
-        public string TenantName { get; set; }
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string DigitalSignature { get; set; }
+
+        public TenantSettings Settings { get; set; }
+
+        public TenantUpdatedArgs()
+        {
+            Settings = new TenantSettings();
+        }
     }
 }
