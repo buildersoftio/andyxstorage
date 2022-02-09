@@ -37,6 +37,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Id = obj.Id,
                 Component = obj.Component,
                 MessageRaw = obj.MessageRaw,
+                Headers = obj.Headers,
                 Product = obj.Product,
                 Topic = obj.Topic,
                 SentDate = obj.SentDate

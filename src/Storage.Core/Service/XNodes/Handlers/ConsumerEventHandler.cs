@@ -1,6 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.IO.Locations;
-using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
@@ -234,7 +233,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                         SentDate = row.SentDate,
 
-                        MessageRaw = row.Payload.JsonToObject<object>()
+                        MessageRaw = row.Payload.JsonToObject<object>(),
+                        Headers = row.Headers.JsonToObject<Dictionary<string, object>>()
                     }
                 };
 
