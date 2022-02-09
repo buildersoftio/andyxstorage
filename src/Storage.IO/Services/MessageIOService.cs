@@ -66,6 +66,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             {
                 MessageId = message.Id,
                 Payload = message.MessageRaw.ToJsonAndEncrypt(),
+                Headers = message.Headers.ToJsonAndEncrypt(),
                 SentDate = message.SentDate,
                 StoredDate = DateTime.Now
             });

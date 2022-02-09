@@ -113,7 +113,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public bool TryUpdateTenantDirectory(string tenantName, Tenant tenantDetails)
         {
-            Tenant TenantIOReader
+            if (Directory.Exists(TenantLocations.GetTenantDirectory(tenantName)) == true)
+            {
+                // Update the file from the Server
+                tenantConfigFilesQueue.Enqueue(tenantDetails);
+                InitializeTenantConfigFileProcessor();
+            }
             return true;
         }
 
