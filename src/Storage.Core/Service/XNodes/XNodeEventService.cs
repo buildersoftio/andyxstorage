@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 {
@@ -35,11 +36,17 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         public event Action<TenantCreatedArgs> TenantCreated;
         public event Action<TenantUpdatedArgs> TenantUpdated;
 
+        public event Action<TenantTokenCreatedArgs> TenantTokenCreated;
+        public event Action<TenantTokenRevokedArgs> TenantTokenRevoked;
+
         public event Action<ProductCreatedArgs> ProductCreated;
         public event Action<ProductUpdatedArgs> ProductUpdated;
 
         public event Action<ComponentCreatedArgs> ComponentCreated;
         public event Action<ComponentUpdatedArgs> ComponentUpdated;
+
+        public event Action<ComponentTokenCreatedArgs> ComponentTokenCreated;
+        public event Action<ComponentTokenRevokedArgs> ComponentTokenRevoked;
 
         public event Action<TopicCreatedArgs> TopicCreated;
         public event Action<TopicUpdatedArgs> TopicUpdated;
@@ -87,17 +94,27 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
             _connection = provider.GetHubConnection();
 
+            _connection.Closed += _connection_Closed;
+            _connection.Reconnected += _connection_Reconnected;
+            _connection.Reconnecting += _connection_Reconnecting;
+
             _connection.On<AgentConnectedArgs>("StorageConnected", connectedArgs => StorageConnected?.Invoke(connectedArgs));
             _connection.On<AgentDisconnectedArgs>("StorageDisconnected", disconnectedArgs => StorageDisconnected?.Invoke(disconnectedArgs));
 
             _connection.On<TenantCreatedArgs>("TenantCreated", tenantCreated => TenantCreated?.Invoke(tenantCreated));
             _connection.On<TenantUpdatedArgs>("TenantUpdated", tenantUpdated => TenantUpdated?.Invoke(tenantUpdated));
 
+            _connection.On<TenantTokenCreatedArgs>("TenantTokenCreated", tenantTokenCreated => TenantTokenCreated?.Invoke(tenantTokenCreated));
+            _connection.On<TenantTokenRevokedArgs>("TenantTokenRevoked", tenantTokenRevoked => TenantTokenRevoked?.Invoke(tenantTokenRevoked));
+
             _connection.On<ProductCreatedArgs>("ProductCreated", productCreated => ProductCreated?.Invoke(productCreated));
             _connection.On<ProductUpdatedArgs>("ProductUpdated", productUpdated => ProductUpdated?.Invoke(productUpdated));
 
             _connection.On<ComponentCreatedArgs>("ComponentCreated", componentCreated => ComponentCreated?.Invoke(componentCreated));
             _connection.On<ComponentUpdatedArgs>("ComponentUpdated", componentUpdated => ComponentUpdated?.Invoke(componentUpdated));
+
+            _connection.On<ComponentTokenCreatedArgs>("ComponentTokenCreated", componentTokenCreated => ComponentTokenCreated?.Invoke(componentTokenCreated));
+            _connection.On<ComponentTokenRevokedArgs>("ComponentTokenRevoked", componentTokenRevoked => ComponentTokenRevoked?.Invoke(componentTokenRevoked));
 
             _connection.On<TopicCreatedArgs>("TopicCreated", topicCreated => TopicCreated?.Invoke(topicCreated));
             _connection.On<TopicUpdatedArgs>("TopicUpdated", topicUpdated => TopicUpdated?.Invoke(topicUpdated));
@@ -117,6 +134,24 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             ConnectAsync();
 
             xNodeConnectionRepository.AddService(nodeConfig.ServiceUrl, agentId, this);
+        }
+
+        private Task _connection_Closed(Exception arg)
+        {
+            logger.LogError($"Agent connection is closed, details {arg.Message}");
+            return Task.CompletedTask;
+        }
+
+        private Task _connection_Reconnected(string arg)
+        {
+            logger.LogInformation($"Agent with id {Guid.NewGuid()} is connected");
+            return Task.CompletedTask;
+        }
+
+        private Task _connection_Reconnecting(Exception arg)
+        {
+            logger.LogWarning($"Agent connection is lost, agent is reconnecting to node, details {arg.Message}");
+            return Task.CompletedTask;
         }
 
         private void InitializeEventHandlers()
@@ -148,7 +183,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             {
                 if (task.Exception != null)
                 {
-                    logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}, {string.Join(",", task.Exception.InnerExceptions)}");
+                    // Details is not show for now...
+                    //logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}, {string.Join(",", task.Exception.InnerExceptions)}");
+
+                    logger.LogError($"Error occurred during connection. Details: {task.Exception.Message}");
 
                     // retry connection
                     Thread.Sleep(3000);
