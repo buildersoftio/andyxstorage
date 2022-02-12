@@ -43,10 +43,22 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         }
 
-        private void XNodeEventService_TenantCreated(Model.Events.Tenants.TenantCreatedArgs obj)
+        private async void XNodeEventService_TenantCreated(Model.Events.Tenants.TenantCreatedArgs obj)
         {
             tenantIOService.TryCreateTenantDirectory(obj.Name, new Model.App.Tenants.Tenant() { Id = obj.Id, Name = obj.Name, Settings = obj.Settings });
             logger.LogInformation($"Tenant '{obj.Name}' properties created");
+
+            foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+            {
+                // This node should be ignored because, it already produces CreateTenant.
+                if (xNode.Key != xNodeEventService.GetCurrentXNodeServiceUrl())
+                {
+                    // Transmit the CreateComponentToken to the other nodes.
+                    await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("CreateTenant", obj);
+                }
+            }
+            logger.LogInformation($"Informing other nodes for tenant '{obj.Name}' creation");
+
         }
 
         private void XNodeEventService_TenantUpdated(Model.Events.Tenants.TenantUpdatedArgs obj)
@@ -57,6 +69,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private async void XNodeEventService_TenantTokenCreated(Model.Events.Tenants.TenantTokenCreatedArgs obj)
         {
+            // store tenantToken data
+            tenantIOService.CreateTenantTokenFile(obj.Tenant, obj.Token);
+            logger.LogInformation($"TenantToken created for '{obj.Tenant}', settings updated");
+
             foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
             {
                 // This node should be ignored because, it already produces CreateTenantToken.
@@ -66,12 +82,15 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("CreateTenantToken", obj);
                 }
             }
-
-            logger.LogInformation($"TenantToken created for '{obj.Tenant}', settings updated");
+            logger.LogInformation($"Informing other nodes for TenantToken creation");
         }
 
         private async void XNodeEventService_TenantTokenRevoked(Model.Events.Tenants.TenantTokenRevokedArgs obj)
         {
+            // remove from the storage
+            tenantIOService.DeleteTenantTokenFile(obj.Tenant, obj.Token);
+            logger.LogInformation($"TenantToken revoked for '{obj.Tenant}', settings updated");
+
             foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
             {
                 // This node should be ignored because, it already produces RevokeTenantToken.
@@ -81,8 +100,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("RevokeTenantToken", obj);
                 }
             }
-
-            logger.LogInformation($"TenantToken revoked for '{obj.Tenant}', settings updated");
+            logger.LogInformation($"Informing other nodes for TenantToken revocation");
         }
 
         private void XNodeEventService_ProductCreated(Model.Events.Products.ProductCreatedArgs obj)
@@ -109,6 +127,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
         private async void XNodeEventService_ComponentTokenCreated(Model.Events.Components.ComponentTokenCreatedArgs obj)
         {
+            // store componentToken data
+            tenantIOService.CreateComponentTokenFile(obj.Tenant, obj.Product, obj.Component, obj.Token);
+            logger.LogInformation($"ComponentToken created for '{obj.Tenant}/{obj.Product}/{obj.Component}', settings updated");
+
             foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
             {
                 // This node should be ignored because, it already produces CreateComponentToken.
@@ -118,11 +140,15 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("CreateComponentToken", obj);
                 }
             }
-
-            logger.LogInformation($"ComponentToken created for '{obj.Tenant}/{obj.Product}/{obj.Component}', settings updated");
+            logger.LogInformation($"Informing other nodes for ComponentToken creation");
         }
+
         private async void XNodeEventService_ComponentTokenRevoked(Model.Events.Components.ComponentTokenRevokedArgs obj)
         {
+            // remove from the storage
+            tenantIOService.DeleteComponentTokenFile(obj.Tenant, obj.Product, obj.Component, obj.Token);
+            logger.LogInformation($"ComponentToken revoked for '{obj.Tenant}/{obj.Product}/{obj.Component}', settings updated");
+
             foreach (var xNode in xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
             {
                 // This node should be ignored because, it already produces RevokeComponentToken
@@ -132,8 +158,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("RevokeComponentToken", obj);
                 }
             }
-
-            logger.LogInformation($"ComponentToken revoked for '{obj.Tenant}/{obj.Product}/{obj.Component}', settings updated");
+            logger.LogInformation($"Informing other nodes for ComponentToken revocation");
         }
 
         private void XNodeEventService_TopicCreated(Model.Events.Topics.TopicCreatedArgs obj)

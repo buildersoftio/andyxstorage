@@ -55,9 +55,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Readers
                         string component = Path.GetFileName(componentLocation);
 
                         string[] topics = Directory.GetDirectories(TenantLocations.GetTopicRootDirectory(tenant, product, component));
+                        
                         foreach (var topicLocation in topics)
                         {
                             string topic = Path.GetFileName(topicLocation);
+                            if (topic == "tokens")
+                                continue;
+
                             string[] consumers = Directory.GetDirectories(TenantLocations.GetConsumerRootDirectory(tenant, product, component, topic));
                             foreach (var consumerLocation in consumers)
                             {

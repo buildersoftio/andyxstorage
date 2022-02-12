@@ -6,6 +6,7 @@ using Buildersoft.Andy.X.Storage.Model.App.Products;
 using Buildersoft.Andy.X.Storage.Model.App.Tenants;
 using Buildersoft.Andy.X.Storage.Model.App.Topics;
 using Buildersoft.Andy.X.Storage.Model.Logs;
+using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -99,6 +100,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 Directory.CreateDirectory(TenantLocations.GetTenantDirectory(tenantName));
                 Directory.CreateDirectory(TenantLocations.GetProductRootDirectory(tenantName));
                 Directory.CreateDirectory(TenantLocations.GetTenantLogsRootDirectory(tenantName));
+                Directory.CreateDirectory(TenantLocations.GetTenantTokensDirectory(tenantName));
 
                 tenantConfigFilesQueue.Enqueue(tenantDetails);
                 InitializeTenantConfigFileProcessor();
@@ -150,6 +152,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 {
                     Directory.CreateDirectory(TenantLocations.GetComponentDirectory(tenant, product, component.Name));
                     Directory.CreateDirectory(TenantLocations.GetTopicRootDirectory(tenant, product, component.Name));
+                    Directory.CreateDirectory(TenantLocations.GetComponentTokenDirectory(tenant, product, component.Name));
 
                     // Because this call is triggered by XNode in only in an agent in storage, it doesn't need to go thru a queue.
                     TenantWriter.WriteComponentConfigFile(tenant, product, component);
@@ -235,6 +238,55 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
             tenantLogsQueue.Enqueue(new TenantLog() { Tenant = tenantName, Log = log });
 
             InitializeTenantLoggingProcessor();
+        }
+
+
+        public bool CreateTenantTokenFile(string tenant, TenantToken tenantToken)
+        {
+            string fileName = $"tkn_{Guid.NewGuid()}.xandy";
+            return TenantWriter.WriteTenantTokenFile(fileName, tenant, tenantToken);
+        }
+
+        public bool DeleteTenantTokenFile(string tenant, string token)
+        {
+            var tokenFiles = Directory.GetFiles(TenantLocations.GetTenantTokensDirectory(tenant));
+            foreach (var tokenFile in tokenFiles)
+            {
+                var tokenDetails = File.ReadAllText(tokenFile).JsonToObject<TenantToken>();
+                if (tokenDetails != null)
+                {
+                    if (tokenDetails.Token == token)
+                    {
+                        File.Delete(tokenFile);
+                        break;
+                    }
+                }
+            }
+            return true;
+        }
+
+        public bool CreateComponentTokenFile(string tenant, string product, string component, ComponentToken componentToken)
+        {
+            string fileName = $"tkn_{Guid.NewGuid()}.xandy";
+            return TenantWriter.WriteComponentTokenFile(tenant, product, component, fileName, componentToken);
+        }
+
+        public bool DeleteComponentTokenFile(string tenant, string product, string component,string token)
+        {
+            var tokenFiles = Directory.GetFiles(TenantLocations.GetComponentTokenDirectory(tenant, product, component));
+            foreach (var tokenFile in tokenFiles)
+            {
+                var tokenDetails = File.ReadAllText(tokenFile).JsonToObject<ComponentToken>();
+                if (tokenDetails != null)
+                {
+                    if (tokenDetails.Token == token)
+                    {
+                        File.Delete(tokenFile);
+                        break;
+                    }
+                }
+            }
+            return true;
         }
     }
 }
