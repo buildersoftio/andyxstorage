@@ -15,5 +15,10 @@ namespace Buildersoft.Andy.X.Storage.Model.App.Messages
         public Dictionary<string, object> Headers { get; set; }
 
         public DateTime SentDate { get; set; }
+
+        public Message()
+        {
+            Headers = new Dictionary<string, object>();
+        }
     }
 }
