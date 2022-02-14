@@ -76,11 +76,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Product = obj.Product,
                 Component = obj.Component,
                 Topic = obj.Topic,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                SubscriptionType = obj.SubscriptionType,
             });
             string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
 
-            ReleaseUnacknoledgedMessageTasks(consumerKey);
+            if (obj.SubscriptionType != SubscriptionType.Shared)
+                ReleaseUnacknoledgedMessageTasks(consumerKey);
         }
 
         private void XNodeEventService_MessageAcknowledged(Model.Events.Messages.MessageAcknowledgedArgs obj)
