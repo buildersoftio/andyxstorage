@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Buildersoft.Andy.X.Storage.Model.App.Consumers;
+using System;
 
 namespace Buildersoft.Andy.X.Storage.Model.Events.Consumers
 {
