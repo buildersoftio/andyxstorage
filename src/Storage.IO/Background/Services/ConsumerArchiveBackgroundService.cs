@@ -71,8 +71,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Background.Services
 
             StopService();
 
+            int totalCount = _consumerPointerContext.ConsumerMessages.Count();
             var ackedPointerMessages = _consumerPointerContext.ConsumerMessages.Where(x => x.IsAcknowledged == true).OrderBy(x => x.SentDate).Take(_partitionConfiguration.SizeInMemory);
-            _consumerPointerContext.BulkDelete(ackedPointerMessages.ToList());
+            if (totalCount > ackedPointerMessages.Count())
+                _consumerPointerContext.BulkDelete(ackedPointerMessages.ToList());
 
             StartService();
         }
