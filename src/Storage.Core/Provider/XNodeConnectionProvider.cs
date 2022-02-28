@@ -66,6 +66,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                         {
                             if (message is HttpClientHandler httpClientHandler)
                             {
+                                if (nodeConfig.CertificateFile == "")
+                                {
+                                    httpClientHandler.ServerCertificateCustomValidationCallback +=
+                                        (sender, certificate, chain, sslPolicyErrors) => { return true; };
+                                    return message;
+                                }
+
                                 httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
                                 httpClientHandler.SslProtocols = SslProtocols.Tls12;
                                 var certLocation = Path.Combine(SystemLocations.GetConfigCertificateDirectory(), nodeConfig.CertificateFile);
