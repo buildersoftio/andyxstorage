@@ -130,7 +130,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             _connection.On<MessageStoredArgs>("MessageStored", msgStored => MessageStored?.Invoke(msgStored));
 
             InitializeEventHandlers();
-
             ConnectAsync();
 
             xNodeConnectionRepository.AddService(nodeConfig.ServiceUrl, agentId, this);
@@ -139,6 +138,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private Task _connection_Closed(Exception arg)
         {
             logger.LogError($"Agent connection is closed, details {arg.Message}");
+
+            // try to reconnect
+            ConnectAsync();
+
             return Task.CompletedTask;
         }
 
