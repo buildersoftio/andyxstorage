@@ -101,6 +101,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
         {
             _flushPointerTimer.Elapsed -= FlushPointerTimer_Elapsed;
             _flushPointerTimer.Stop();
+
+            // Cleanup memory.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 

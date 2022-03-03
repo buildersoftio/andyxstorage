@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
+using Buildersoft.Andy.X.Storage.Model.Commands.Consumer;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Consumers;
 using Buildersoft.Andy.X.Storage.Model.Files;
@@ -50,7 +51,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             _xNodeEventService.MessageAcknowledged += XNodeEventService_MessageAcknowledged;
         }
 
-        private void XNodeEventService_ConsumerConnected(ConsumerConnectedArgs obj)
+        private async void XNodeEventService_ConsumerConnected(ConsumerConnectedArgs obj)
         {
             _consumerIOService.TryCreateConsumerDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Consumer()
             {
@@ -64,9 +65,25 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 ConsumerSettings = new ConsumerSettings() { InitialPosition = obj.InitialPosition },
                 CreatedDate = DateTime.Now
             });
+
+            // notify other nodes in cluster that a consumer has been disconnected
+            await NotifyNodesForConsumerConnection(new NotifyConsumerConnection()
+            {
+                ConnectionType = ConnectionType.Connected,
+
+                Id = obj.Id,
+                SubscriptionType = obj.SubscriptionType,
+                Component = obj.Component,
+                ConsumerName = obj.ConsumerName,
+                InitialPosition = InitialPosition.Latest,
+                Product = obj.Product,
+                Tenant = obj.Tenant,
+                Topic = obj.Topic,
+            });
+
         }
 
-        private void XNodeEventService_ConsumerDisconnected(ConsumerDisconnectedArgs obj)
+        private async void XNodeEventService_ConsumerDisconnected(ConsumerDisconnectedArgs obj)
         {
             _consumerIOService.WriteDisconnectedConsumerLog(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Consumer()
             {
@@ -83,6 +100,22 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             if (obj.SubscriptionType != SubscriptionType.Shared)
                 ReleaseUnacknoledgedMessageTasks(consumerKey);
+
+            // notify other nodes in cluster that a consumer has been disconnected
+            await NotifyNodesForConsumerConnection(new NotifyConsumerConnection()
+            {
+                ConnectionType = ConnectionType.Disconnected,
+
+                Id = obj.Id,
+                SubscriptionType = obj.SubscriptionType,
+                Component = obj.Component,
+                ConsumerName = obj.ConsumerName,
+                InitialPosition = InitialPosition.Latest,
+                Product = obj.Product,
+                Tenant = obj.Tenant,
+                Topic = obj.Topic,
+            });
+
         }
 
         private void XNodeEventService_MessageAcknowledged(Model.Events.Messages.MessageAcknowledgedArgs obj)
@@ -90,6 +123,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             _consumerIOService.WriteMessageAcknowledged(obj);
         }
 
+
+        #region Unacknowledge Messages
         private void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(ConsumerConnectedArgs obj)
         {
             string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
@@ -167,6 +202,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             _unacknowledgedMessageProcesses[consumerKey].Dispose();
             _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
+
+            // Cleanup memory.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         private void CheckPointerDbConnection(ConsumerPointerContext tenantContext, string consumerKey)
@@ -288,6 +327,30 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             return sorted;
         }
+        #endregion
+
+
+        private async Task NotifyNodesForConsumerConnection(NotifyConsumerConnection obj)
+        {
+            if (obj.SubscriptionType != SubscriptionType.Shared)
+            {
+                _logger.LogInformation($"Notify other nodes for Consumer '{obj.ConsumerName}' connection status");
+                // Transmit the message to other connected XNODES.
+                if (_xNodeEventService.GetXNodeConnectionRepository().GetAllServices().Count > 1)
+                {
+                    foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                    {
+                        // this node should be ignored because, it already produces the messages to consumers connected.
+                        if (xNode.Key != _xNodeEventService.GetCurrentXNodeServiceUrl())
+                        {
+                            //Transmit the message to the other nodes.
+                            await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("NotifyNodesForConsumerConnection", obj);
+                        }
+                    }
+                }
+            }
+        }
+
 
         private string GenerateConsumerKey(string tenant, string product, string component, string topic, string consumer)
         {

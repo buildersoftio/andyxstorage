@@ -187,6 +187,10 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             _flushPointerTimer.Stop();
 
             _consumerArchiveBackgroundService.StopService();
+
+            // Cleanup memory.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }
