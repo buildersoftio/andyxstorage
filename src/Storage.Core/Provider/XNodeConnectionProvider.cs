@@ -29,6 +29,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
             this.dataStorageConfig = dataStorageConfig;
             this.agentConfiguration = agentConfiguration;
             this.agentId = agentId;
+
             ConnectToXNode();
         }
 

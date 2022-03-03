@@ -50,7 +50,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Background.Services
             backgroundTaskTimer.Elapsed += BackgroundTaskTimer_Elapsed;
             backgroundTaskTimer.AutoReset = true;
 
-            _logger.LogInformation($"Consumer pointer archivation service for '{_tenant}/{_product}/{_component}/{_topic}/{_consumer}' is initialized");
+
+            _logger.LogInformation($"Pointer Archivation Service for '{_tenant}/{_product}/{_component}/{_topic}/{_consumer}' is active");
         }
 
         public void StopService()
@@ -67,8 +68,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Background.Services
 
         private void BackgroundTaskTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            _logger.LogInformation($"Consumer pointer archivation service for '{_tenant}/{_product}/{_component}/{_topic}/{_consumer}' is triggered");
-
             StopService();
 
             int totalCount = _consumerPointerContext.ConsumerMessages.Count();
