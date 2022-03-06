@@ -15,6 +15,7 @@ using Buildersoft.Andy.X.Storage.Model.Events.Topics;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -52,6 +53,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         public event Action<TopicUpdatedArgs> TopicUpdated;
 
         public event Action<MessageStoredArgs> MessageStored;
+        public event Action<List<MessageStoredArgs>> MessagesStored;
         public event Action<MessageAcknowledgedArgs> MessageAcknowledged;
 
         public event Action<ProducerConnectedArgs> ProducerConnected;
@@ -130,6 +132,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             _connection.On<MessageAcknowledgedArgs>("MessageAcknowledged", messageAcked => MessageAcknowledged?.Invoke(messageAcked));
 
             _connection.On<MessageStoredArgs>("MessageStored", msgStored => MessageStored?.Invoke(msgStored));
+            _connection.On<List<MessageStoredArgs>>("MessagesStored", msgStored => MessagesStored?.Invoke(msgStored));
 
             InitializeEventHandlers();
             ConnectAsync();

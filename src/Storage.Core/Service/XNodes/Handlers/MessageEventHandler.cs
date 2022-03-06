@@ -3,6 +3,7 @@ using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.Events.Messages;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -27,6 +28,27 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         private void InitializeEvents()
         {
             xNodeEventService.MessageStored += XNodeEventService_MessageStored;
+            xNodeEventService.MessagesStored += XNodeEventService_MessagesStored;
+        }
+
+        private async void XNodeEventService_MessagesStored(List<MessageStoredArgs> obj)
+        {
+            foreach (var message in obj)
+            {
+                messageIOService.StoreMessage(new Model.App.Messages.Message()
+                {
+                    Tenant = message.Tenant,
+                    Id = message.Id,
+                    Component = message.Component,
+                    MessageRaw = message.MessageRaw,
+                    Headers = message.Headers,
+                    Product = message.Product,
+                    Topic = message.Topic,
+                    SentDate = message.SentDate
+                });
+
+                await RetransmitMessageToOtherNodes(message);
+            }
         }
 
         private async void XNodeEventService_MessageStored(MessageStoredArgs obj)
