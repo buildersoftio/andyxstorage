@@ -4,7 +4,7 @@ using EFCore.BulkExtensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Timers;
 
 namespace Buildersoft.Andy.X.Storage.IO.Connectors
@@ -21,6 +21,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
         public ConcurrentQueue<Model.Entities.Message> MessagesBuffer { get; set; }
         public ConcurrentDictionary<Guid, Model.Entities.Message> BatchMessagesToInsert { get; set; }
 
+        public bool isMemoryReleased { get; set; }
+
         public MessageStorageConnector(PartitionConfiguration partitionConfiguration, int agentCount)
         {
             _partitionConfiguration = partitionConfiguration;
@@ -36,6 +38,8 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             _flushPointerTimer.Elapsed += FlushPointerTimer_Elapsed;
             _flushPointerTimer.AutoReset = true;
             _flushPointerTimer.Start();
+
+            isMemoryReleased = true;
         }
 
         private void FlushPointerTimer_Elapsed(object sender, ElapsedEventArgs e)
@@ -44,13 +48,38 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
 
             FlushBatchToDisk();
 
+            ReleaseMemory();
+
             _flushPointerTimer.Start();
+        }
+
+        private void ReleaseMemory()
+        {
+            if (isMemoryReleased == false)
+            {
+                if (MessagesBuffer.Count == 0 && BatchMessagesToInsert.Count == 0)
+                {
+                    // MessageContext.Dispose();
+                    GC.Collect();
+                    GC.SuppressFinalize(this);
+                    GC.SuppressFinalize(MessageContext);
+                    GC.SuppressFinalize(MessagesBuffer);
+                    GC.SuppressFinalize(BatchMessagesToInsert);
+
+                    //GC.Collect();
+                    //GC.WaitForPendingFinalizers();
+
+                    isMemoryReleased = true;
+                }
+            }
         }
 
         private void FlushBatchToDisk()
         {
             try
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
                 if (ThreadingPool.AreThreadsRunning == true)
                 {
                     if (BatchMessagesToInsert.Count >= _partitionConfiguration.SizeInMemory)
@@ -90,6 +119,9 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             {
                 MessageContext.ChangeTracker.AutoDetectChangesEnabled = false;
                 MessageContext.Database.EnsureCreated();
+
+                // Enable Memory Release
+                isMemoryReleased = false;
             }
             catch (Exception)
             {
@@ -101,11 +133,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
         {
             _flushPointerTimer.Elapsed -= FlushPointerTimer_Elapsed;
             _flushPointerTimer.Stop();
-
-            // Cleanup memory.
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
         }
     }
-
 }

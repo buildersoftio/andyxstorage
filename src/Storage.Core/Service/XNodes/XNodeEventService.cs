@@ -70,11 +70,13 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
 
         private string agentId;
         private readonly XNodeConfiguration nodeConfig;
+        private readonly PartitionConfiguration partitionConfiguration;
 
         public XNodeEventService(ILogger<SystemService> logger,
             string agentId,
             XNodeConfiguration nodeConfig,
             DataStorageConfiguration dataStorageConfig,
+            PartitionConfiguration partitionConfiguration,
             AgentConfiguration agentConfiguration,
             IXNodeConnectionRepository xNodeConnectionRepository,
             TenantIOService tenantIOService,
@@ -90,7 +92,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             this.messageIOService = messageIOService;
             this.agentId = agentId;
             this.nodeConfig = nodeConfig;
-
+            this.partitionConfiguration = partitionConfiguration;
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
             _connection = provider.GetHubConnection();
 
@@ -162,7 +164,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             agentEventHandler = new AgentEventHandler(logger, this, tenantIOService);
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
-            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService, messageIOService);
+            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService, messageIOService, partitionConfiguration);
             messageEventHandler = new MessageEventHandler(logger, this, messageIOService);
         }
 
