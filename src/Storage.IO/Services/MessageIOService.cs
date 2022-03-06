@@ -37,7 +37,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public bool InitializeMessageFileConnector(string tenant, string product, string component, string topic, DateTime date)
         {
-            string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd}";
+            string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd_HH}";
             lock (connectors)
             {
                 try
@@ -146,7 +146,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
 
         public string AddMessageFileConnectorGetKey(string tenant, string product, string component, string topic, DateTime date)
         {
-            string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd}";
+            string topicKey = $"{tenant}~{product}~{component}~{topic}~{date:yyyy_MM_dd_HH}";
 
             InitializeMessageFileConnector(tenant, product, component, topic, date);
 

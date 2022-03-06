@@ -4,6 +4,7 @@ using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
 using Buildersoft.Andy.X.Storage.Model.Commands.Consumer;
+using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Consumers;
 using Buildersoft.Andy.X.Storage.Model.Files;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -26,18 +28,22 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         private readonly XNodeEventService _xNodeEventService;
         private readonly ConsumerIOService _consumerIOService;
         private readonly MessageIOService _messageIOService;
+        private readonly PartitionConfiguration _partitionConfiguration;
         private readonly ConcurrentDictionary<string, Task> _unacknowledgedMessageProcesses;
 
         public ConsumerEventHandler(
             ILogger<SystemService> logger,
             XNodeEventService xNodeEventService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService)
+            MessageIOService messageIOService,
+            PartitionConfiguration partitionConfiguration)
         {
             _logger = logger;
             _xNodeEventService = xNodeEventService;
             _consumerIOService = consumerIOService;
             _messageIOService = messageIOService;
+            _partitionConfiguration = partitionConfiguration;
+
             _unacknowledgedMessageProcesses = new ConcurrentDictionary<string, Task>();
 
             InitializeEvents();
@@ -106,16 +112,15 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             {
                 ConnectionType = ConnectionType.Disconnected,
 
-                Id = obj.Id,
-                SubscriptionType = obj.SubscriptionType,
-                Component = obj.Component,
-                ConsumerName = obj.ConsumerName,
-                InitialPosition = InitialPosition.Latest,
-                Product = obj.Product,
                 Tenant = obj.Tenant,
+                Product = obj.Product,
                 Topic = obj.Topic,
+                Component = obj.Component,
+                Id = obj.Id,
+                ConsumerName = obj.ConsumerName,
+                SubscriptionType = obj.SubscriptionType,
+                InitialPosition = InitialPosition.Latest,
             });
-
         }
 
         private void XNodeEventService_MessageAcknowledged(Model.Events.Messages.MessageAcknowledgedArgs obj)
@@ -202,10 +207,6 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             _unacknowledgedMessageProcesses[consumerKey].Dispose();
             _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
-
-            // Cleanup memory.
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
         }
 
         private void CheckPointerDbConnection(ConsumerPointerContext tenantContext, string consumerKey)
@@ -259,9 +260,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             if (isNewConsumer == true)
                 CachePointers(obj, rows, partitionDate);
 
+            var consumerMessages = new List<ConsumerMessage>();
             foreach (var row in rows)
             {
-                var consumerMessage = new ConsumerMessage()
+                consumerMessages.Add(new ConsumerMessage()
                 {
                     Consumer = obj.ConsumerName,
                     Message = new Message()
@@ -277,12 +279,35 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         MessageRaw = row.Payload.JsonToObject<object>(),
                         Headers = row.Headers.JsonToObject<Dictionary<string, object>>()
                     }
-                };
+                });
+                await SendToNodes(consumerMessages);
+            }
+            await SendToNodes(consumerMessages, true);
+        }
 
-                foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+        private async Task SendToNodes(List<ConsumerMessage> consumerMessages, bool sendTheRest = false)
+        {
+            if (sendTheRest == false)
+            {
+                if (consumerMessages.Count == _partitionConfiguration.BatchSize)
                 {
-                    //Transmit the message to the other nodes.
-                    await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
+                    foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                    {
+                        //Transmit messages to the other nodes.
+                        await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessages);
+                    }
+                    consumerMessages.Clear();
+                }
+            }
+            else
+            {
+                if (consumerMessages.Count > 0)
+                {
+                    foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                    {
+                        //Transmit messages to the other nodes.
+                        await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessages);
+                    }
                 }
             }
         }
@@ -318,7 +343,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 string fileName = Path.GetFileNameWithoutExtension(partition);
                 string[] partitionNameSplited = fileName.Split("_");
 
-                var partitionDate = DateTime.Parse($"{partitionNameSplited[2]}-{partitionNameSplited[3]}-{partitionNameSplited[4]}");
+                var partitionDate = DateTime.ParseExact($"{partitionNameSplited[2]}-{partitionNameSplited[3]}-{partitionNameSplited[4]} {partitionNameSplited[5]}:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
 
                 messages.Add(new MessageFile() { Path = partition, PartitionDate = partitionDate });
             });
