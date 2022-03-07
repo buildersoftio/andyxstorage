@@ -70,6 +70,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                 SentDate = message.SentDate,
                 StoredDate = DateTime.Now
             });
+            connectors[topicKey].EnableReleaseMemoryFlag();
 
             InitializeMessagingProcessor(topicKey, message.SentDate);
         }

@@ -123,6 +123,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             }
         }
 
+        public void EnableReleaseMemoryFlag()
+        {
+            if (isMemoryReleased == true)
+                isMemoryReleased = false;
+        }
+
         private void AutoFlushAcknowledgedBatchPointers()
         {
             lock (BatchAcknowledgedConsumerMessagesToMerge)

@@ -21,7 +21,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
         public ConcurrentQueue<Model.Entities.Message> MessagesBuffer { get; set; }
         public ConcurrentDictionary<Guid, Model.Entities.Message> BatchMessagesToInsert { get; set; }
 
-        public bool isMemoryReleased { get; set; }
+        private bool isMemoryReleased { get; set; }
 
         public MessageStorageConnector(PartitionConfiguration partitionConfiguration, int agentCount)
         {
@@ -72,6 +72,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
                     isMemoryReleased = true;
                 }
             }
+        }
+
+        public void EnableReleaseMemoryFlag()
+        {
+            if (isMemoryReleased == true)
+                isMemoryReleased = false;
         }
 
         private void FlushBatchToDisk()

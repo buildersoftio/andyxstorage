@@ -208,6 +208,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     PartitionIndex = 0
                 });
 
+            connectors[consumerKey].EnableReleaseMemoryFlag();
             InitializeMessagingProcessor(consumerKey);
         }
 
