@@ -252,6 +252,12 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                 if (isNewConsumer != true)
                     unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
+
+                // Remove from memory all not used data from here...
+                rows = null;
+                GC.Collect();
+                GC.SuppressFinalize(this);
+                GC.SuppressFinalize(rows);
             }
         }
 
