@@ -250,8 +250,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
                 await AnalyseFileRows(obj, rows, paritionFile.PartitionDate, isNewConsumer);
 
-                if (isNewConsumer != true)
-                    unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
+                // here is a bug #91, is removing all items form the list
+                // for now we are removing this condition
+                //if (isNewConsumer != true)
+                //    unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
 
                 // Remove from memory all not used data from here...
                 GC.Collect();
