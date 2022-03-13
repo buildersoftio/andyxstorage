@@ -1,4 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
+using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Consumers;
 using Buildersoft.Andy.X.Storage.Core.Service.XNodes;
 using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.IO.Readers;
@@ -23,6 +24,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
         private readonly ProducerIOService _producerIOService;
         private readonly ConsumerIOService _consumerIOService;
         private readonly MessageIOService _messageIOService;
+        private readonly IConsumerConnectionRepository _consumerConnectionRepository;
+
         private readonly List<XNodeConfiguration> nodes;
         private readonly DataStorageConfiguration dataStorage;
         private readonly AgentConfiguration agent;
@@ -38,7 +41,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             TenantIOService tenantIOService,
             ProducerIOService producerIOService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService)
+            MessageIOService messageIOService,
+            IConsumerConnectionRepository consumerConnectionRepository)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
@@ -49,6 +53,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
             _producerIOService = producerIOService;
             _consumerIOService = consumerIOService;
             _messageIOService = messageIOService;
+            _consumerConnectionRepository = consumerConnectionRepository;
+
             nodes = _serviceProvider.GetService(typeof(List<XNodeConfiguration>)) as List<XNodeConfiguration>;
             dataStorage = _serviceProvider.GetService(typeof(DataStorageConfiguration)) as DataStorageConfiguration;
             agent = _serviceProvider.GetService(typeof(AgentConfiguration)) as AgentConfiguration;
@@ -142,7 +148,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.System
                             _tenantIOService,
                             _producerIOService,
                             _consumerIOService,
-                            _messageIOService);
+                            _messageIOService,
+                            _consumerConnectionRepository);
                     }
                 }
                 else

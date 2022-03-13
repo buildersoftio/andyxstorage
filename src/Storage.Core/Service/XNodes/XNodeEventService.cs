@@ -1,4 +1,5 @@
 ﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Connection;
+using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Consumers;
 using Buildersoft.Andy.X.Storage.Core.Provider;
 using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers;
@@ -29,6 +30,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
         private readonly ProducerIOService producerIOService;
         private readonly ConsumerIOService consumerIOService;
         private readonly MessageIOService messageIOService;
+        private readonly IConsumerConnectionRepository consumerConnectionRepository;
+
         private HubConnection _connection;
 
         public event Action<AgentConnectedArgs> StorageConnected;
@@ -84,7 +87,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             TenantIOService tenantIOService,
             ProducerIOService producerIOService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService)
+            MessageIOService messageIOService,
+            IConsumerConnectionRepository consumerConnectionRepository)
         {
             this.logger = logger;
             this.xNodeConnectionRepository = xNodeConnectionRepository;
@@ -92,9 +96,12 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             this.producerIOService = producerIOService;
             this.consumerIOService = consumerIOService;
             this.messageIOService = messageIOService;
+            this.consumerConnectionRepository = consumerConnectionRepository;
             this.agentId = agentId;
             this.nodeConfig = nodeConfig;
             this.partitionConfiguration = partitionConfiguration;
+
+
             var provider = new XNodeConnectionProvider(nodeConfig, dataStorageConfig, agentConfiguration, agentId);
             _connection = provider.GetHubConnection();
 
@@ -167,7 +174,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes
             agentEventHandler = new AgentEventHandler(logger, this, tenantIOService);
             tenantEventHandler = new TenantEventHandler(logger, this, tenantIOService);
             producerEventHandler = new ProducerEventHandler(logger, this, producerIOService);
-            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService, messageIOService, partitionConfiguration);
+            consumerEventHandler = new ConsumerEventHandler(logger, this, consumerIOService, messageIOService, partitionConfiguration, consumerConnectionRepository);
             messageEventHandler = new MessageEventHandler(logger, this, messageIOService);
         }
 
