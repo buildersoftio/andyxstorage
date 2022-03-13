@@ -318,10 +318,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     }
                 });
 
-                if (_consumerConnectionRepository.GetConsumerById(consumerKey) != null)
+                if (_consumerConnectionRepository.GetConsumerById(consumerKey).Connections.Count != 0)
                     await SendToNodes(consumerMessages);
             }
-            if (_consumerConnectionRepository.GetConsumerById(consumerKey) != null)
+            if (_consumerConnectionRepository.GetConsumerById(consumerKey).Connections.Count != 0)
                 await SendToNodes(consumerMessages, true);
 
             consumerMessages.Clear();
