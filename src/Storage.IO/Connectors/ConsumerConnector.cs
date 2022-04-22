@@ -162,12 +162,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             });
         }
 
-        private void AutoFlushUnacknowledgedBatchPointers(bool flushAnyway = false)
+        private void AutoFlushUnacknowledgedBatchPointers()
         {
             CheckIfPointerIsStoredAsAcknowledged();
             lock (BatchUnacknowledgedConsumerMessagesToMerge)
             {
-                if (flushAnyway == false)
+                if (ThreadingPool.AreThreadsRunning == true)
                 {
                     // Flush unacknowledged message
                     if (BatchUnacknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.SizeInMemory)
@@ -175,7 +175,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
                         var batchToInsert = new List<Model.Entities.ConsumerMessage>(BatchUnacknowledgedConsumerMessagesToMerge.Values);
                         ConsumerPointerContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
                         RemoveRegisteredFromDictionary(BatchUnacknowledgedConsumerMessagesToMerge, batchToInsert);
-
                     }
                 }
                 else
