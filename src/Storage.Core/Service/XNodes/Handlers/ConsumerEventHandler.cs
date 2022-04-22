@@ -297,34 +297,37 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             if (isNewConsumer == true)
                 CachePointers(obj, rows, partitionDate);
 
-            var consumerMessages = new List<ConsumerMessage>();
-            foreach (var row in rows)
+            // Check if the consumer is connected, if yes send messages.
+            if (IsConsumerConnected(consumerKey))
             {
-                consumerMessages.Add(new ConsumerMessage()
+                var consumerMessages = new List<ConsumerMessage>();
+                foreach (var row in rows)
                 {
-                    Consumer = obj.ConsumerName,
-                    Message = new Message()
+                    consumerMessages.Add(new ConsumerMessage()
                     {
-                        Tenant = obj.Tenant,
-                        Product = obj.Product,
-                        Component = obj.Component,
-                        Topic = obj.Topic,
-                        Id = row.MessageId,
+                        Consumer = obj.ConsumerName,
+                        Message = new Message()
+                        {
+                            Tenant = obj.Tenant,
+                            Product = obj.Product,
+                            Component = obj.Component,
+                            Topic = obj.Topic,
+                            Id = row.MessageId,
 
-                        SentDate = row.SentDate,
+                            SentDate = row.SentDate,
 
-                        MessageRaw = row.Payload.JsonToObject<object>(),
-                        Headers = row.Headers.JsonToObject<Dictionary<string, object>>()
-                    }
-                });
+                            MessageRaw = row.Payload.JsonToObject<object>(),
+                            Headers = row.Headers.JsonToObject<Dictionary<string, object>>()
+                        }
+                    });
 
-                if (_consumerConnectionRepository.GetConsumerById(consumerKey).Connections.Count != 0)
-                    await SendToNodes(consumerMessages);
+                    if (IsConsumerConnected(consumerKey))
+                        await SendToNodes(consumerMessages);
+                }
+                if (IsConsumerConnected(consumerKey))
+                    await SendToNodes(consumerMessages, true);
+                consumerMessages.Clear();
             }
-            if (_consumerConnectionRepository.GetConsumerById(consumerKey).Connections.Count != 0)
-                await SendToNodes(consumerMessages, true);
-
-            consumerMessages.Clear();
         }
 
         private async Task SendToNodes(List<ConsumerMessage> consumerMessages, bool sendTheRest = false)
@@ -419,10 +422,16 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
         }
 
-
         private string GenerateConsumerKey(string tenant, string product, string component, string topic, string consumer)
         {
             return $"{tenant}~{product}~{component}~{topic}~{consumer}";
+        }
+
+        private bool IsConsumerConnected(string consumerKey)
+        {
+            if (_consumerConnectionRepository.GetConsumerById(consumerKey).Connections.Count != 0)
+                return true;
+            return false;
         }
     }
 }
