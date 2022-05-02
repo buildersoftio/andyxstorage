@@ -1,7 +1,7 @@
-What is Andy X Data Storage?
+What is Andy X Storage?
 ============
 
-Andy X Data Storage is an open-source standalone service that is used to store messages for Andy X. The Data Storage service is offers support for Multitenancy storage. X Data Storage hosts all messages and makes sure that all of them are readable for the client.
+Andy X Storage is an open-source standalone service that is used to store messages for Andy X. The Data Storage service is offers support for Multitenancy storage. X Data Storage hosts all messages and makes sure that all of them are readable for the client.
 
 
 ## Get Started
