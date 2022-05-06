@@ -82,7 +82,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             _consumerConnectionRepository.AddConsumer(consumerKey, consumer);
             _consumerConnectionRepository.AddConsumerConnection(consumerKey);
 
-            // notify other nodes in cluster that a consumer has been disconnected
+            // notify other nodes in cluster that a consumer has been connected
             await NotifyNodesForConsumerConnection(new NotifyConsumerConnection()
             {
                 ConnectionType = ConnectionType.Connected,
