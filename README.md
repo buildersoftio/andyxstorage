@@ -1,12 +1,12 @@
-What is Andy X Data Storage?
+What is Andy X Storage?
 ============
 
-Andy X Data Storage is an open-source standalone service that is used to store messages for Andy X. The Data Storage service is offers support for Multitenancy storage. X Data Storage hosts all messages and makes sure that all of them are readable for the client.
+Andy X Storage is an open-source standalone service that is used to store messages for Andy X. The Data Storage service is offers support for Multitenancy storage. X Data Storage hosts all messages and makes sure that all of them are readable for the client.
 
 
 ## Get Started
 
-Follow the [Getting Started](https://andyx.azurewebsites.net/) instructions how to run Andy X.
+Follow the [Getting Started](https://buildersoftdev.azurewebsites.net/andyx) instructions how to run Andy X.
 
 For local development and testing, you can run Andy X within a Docker container, for more info click [here](https://hub.docker.com/u/buildersoftdev)
 
@@ -23,8 +23,8 @@ Security issues and bugs should be reported privately, via email, en.buildersoft
 
 These are some other repos for related projects:
 
-* [Andy X Dashboard](https://github.com/buildersoftdev/andyxdashboard) - Dashboard for Andy X Node
-* [Andy X Terminal](https://github.com/buildersoftdev/andyxterminal) - Manage all resources of Andy X
+* [Andy X](https://github.com/buildersoftdev/andyx) - Andy X Node, consume and produce messages
+* [Andy X Cli](https://github.com/buildersoftdev/andyx-cli) - Manage all resources of Andy X
 
 ## Deploying Andy X Data Storage with docker-compose
 

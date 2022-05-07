@@ -31,6 +31,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
         public Model.Threading.ThreadPool ThreadingPool { get; set; }
         public ConcurrentQueue<Model.Entities.ConsumerMessage> MessagesBuffer { get; set; }
 
+        private bool isMemoryReleased;
 
         public int Count { get; set; }
         public ConcurrentDictionary<Guid, Model.Entities.ConsumerMessage> BatchAcknowledgedConsumerMessagesToMerge { get; set; }
@@ -65,14 +66,14 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             BatchUnacknowledgedConsumerMessagesToMerge = new ConcurrentDictionary<Guid, Model.Entities.ConsumerMessage>();
             ConsumerPointerContext = consumerPointer;
             Count = 0;
-
+            isMemoryReleased = true;
             try
             {
                 consumerPointer.ChangeTracker.AutoDetectChangesEnabled = false;
                 consumerPointer.Database.EnsureCreated();
 
-                // database exists
-                // create new instance of Backend ConsumerArchiveBackgroundService
+                // Database exists
+                // Create new instance of Backend ConsumerArchiveBackgroundService
                 _consumerArchiveBackgroundService = new ConsumerArchiveBackgroundService(logger, tenant, product, component, topic, consumer, partitionConfiguration, consumerPointer);
                 _consumerArchiveBackgroundService.StartService();
             }
@@ -95,7 +96,37 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             AutoFlushAcknowledgedBatchPointers();
             AutoFlushUnacknowledgedBatchPointers();
 
+            ReleaseMemory();
+
             _flushPointerTimer.Start();
+        }
+
+        private void ReleaseMemory()
+        {
+            if (isMemoryReleased == false)
+            {
+                if (MessagesBuffer.Count == 0 && BatchAcknowledgedConsumerMessagesToMerge.Count == 0 && BatchUnacknowledgedConsumerMessagesToMerge.Count == 0)
+                {
+                    // ConsumerPointerContext.Dispose();
+                    GC.Collect();
+                    GC.SuppressFinalize(this);
+                    GC.SuppressFinalize(ConsumerPointerContext);
+                    GC.SuppressFinalize(MessagesBuffer);
+                    GC.SuppressFinalize(BatchAcknowledgedConsumerMessagesToMerge);
+                    GC.SuppressFinalize(BatchUnacknowledgedConsumerMessagesToMerge);
+
+                    //GC.Collect();
+                    //GC.WaitForPendingFinalizers();
+
+                    isMemoryReleased = true;
+                }
+            }
+        }
+
+        public void EnableReleaseMemoryFlag()
+        {
+            if (isMemoryReleased == true)
+                isMemoryReleased = false;
         }
 
         private void AutoFlushAcknowledgedBatchPointers()
@@ -131,12 +162,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
             });
         }
 
-        private void AutoFlushUnacknowledgedBatchPointers(bool flushAnyway = false)
+        private void AutoFlushUnacknowledgedBatchPointers()
         {
             CheckIfPointerIsStoredAsAcknowledged();
             lock (BatchUnacknowledgedConsumerMessagesToMerge)
             {
-                if (flushAnyway == false)
+                if (ThreadingPool.AreThreadsRunning == true)
                 {
                     // Flush unacknowledged message
                     if (BatchUnacknowledgedConsumerMessagesToMerge.Count() >= _partitionConfiguration.SizeInMemory)
@@ -144,7 +175,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Connectors
                         var batchToInsert = new List<Model.Entities.ConsumerMessage>(BatchUnacknowledgedConsumerMessagesToMerge.Values);
                         ConsumerPointerContext.BulkInsertOrUpdate(BatchUnacknowledgedConsumerMessagesToMerge.Values.ToList());
                         RemoveRegisteredFromDictionary(BatchUnacknowledgedConsumerMessagesToMerge, batchToInsert);
-
                     }
                 }
                 else

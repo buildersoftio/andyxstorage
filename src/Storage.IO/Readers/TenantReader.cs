@@ -1,5 +1,6 @@
 ﻿using Buildersoft.Andy.X.Storage.IO.Locations;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
+using Buildersoft.Andy.X.Storage.Model.App.Tenants;
 using Buildersoft.Andy.X.Storage.Model.App.Topics;
 using Buildersoft.Andy.X.Storage.Utility.Extensions.Json;
 using System.Collections.Generic;
@@ -9,6 +10,12 @@ namespace Buildersoft.Andy.X.Storage.IO.Readers
 {
     public static class TenantReader
     {
+        public static Tenant ReadTenantConfigFile(string tenantName)
+        {
+            return File
+                .ReadAllText(TenantLocations.GetTenantConfigFile(tenantName))
+                .JsonToObjectAndDecrypt<Tenant>();
+        }
         public static Topic ReadTopicConfigFile(string tenant, string product, string component, string topic)
         {
             return File
@@ -48,9 +55,13 @@ namespace Buildersoft.Andy.X.Storage.IO.Readers
                         string component = Path.GetFileName(componentLocation);
 
                         string[] topics = Directory.GetDirectories(TenantLocations.GetTopicRootDirectory(tenant, product, component));
+                        
                         foreach (var topicLocation in topics)
                         {
                             string topic = Path.GetFileName(topicLocation);
+                            if (topic == "tokens")
+                                continue;
+
                             string[] consumers = Directory.GetDirectories(TenantLocations.GetConsumerRootDirectory(tenant, product, component, topic));
                             foreach (var consumerLocation in consumers)
                             {

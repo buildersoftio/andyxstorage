@@ -1,9 +1,11 @@
-﻿using Buildersoft.Andy.X.Storage.Core.Service.System;
+﻿using Buildersoft.Andy.X.Storage.Core.Abstraction.Repository.Consumers;
+using Buildersoft.Andy.X.Storage.Core.Service.System;
 using Buildersoft.Andy.X.Storage.IO.Locations;
-using Buildersoft.Andy.X.Storage.IO.Readers;
 using Buildersoft.Andy.X.Storage.IO.Services;
 using Buildersoft.Andy.X.Storage.Model.App.Consumers;
 using Buildersoft.Andy.X.Storage.Model.App.Messages;
+using Buildersoft.Andy.X.Storage.Model.Commands.Consumer;
+using Buildersoft.Andy.X.Storage.Model.Configuration;
 using Buildersoft.Andy.X.Storage.Model.Contexts;
 using Buildersoft.Andy.X.Storage.Model.Events.Consumers;
 using Buildersoft.Andy.X.Storage.Model.Files;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -26,18 +29,26 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
         private readonly XNodeEventService _xNodeEventService;
         private readonly ConsumerIOService _consumerIOService;
         private readonly MessageIOService _messageIOService;
+        private readonly PartitionConfiguration _partitionConfiguration;
+        private readonly IConsumerConnectionRepository _consumerConnectionRepository;
+
         private readonly ConcurrentDictionary<string, Task> _unacknowledgedMessageProcesses;
 
         public ConsumerEventHandler(
             ILogger<SystemService> logger,
             XNodeEventService xNodeEventService,
             ConsumerIOService consumerIOService,
-            MessageIOService messageIOService)
+            MessageIOService messageIOService,
+            PartitionConfiguration partitionConfiguration,
+            IConsumerConnectionRepository consumerConnectionRepository)
         {
             _logger = logger;
             _xNodeEventService = xNodeEventService;
             _consumerIOService = consumerIOService;
             _messageIOService = messageIOService;
+            _partitionConfiguration = partitionConfiguration;
+            _consumerConnectionRepository = consumerConnectionRepository;
+
             _unacknowledgedMessageProcesses = new ConcurrentDictionary<string, Task>();
 
             InitializeEvents();
@@ -51,9 +62,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             _xNodeEventService.MessageAcknowledged += XNodeEventService_MessageAcknowledged;
         }
 
-        private void XNodeEventService_ConsumerConnected(ConsumerConnectedArgs obj)
+        private async void XNodeEventService_ConsumerConnected(ConsumerConnectedArgs obj)
         {
-            _consumerIOService.TryCreateConsumerDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Consumer()
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            var consumer = new Consumer()
             {
                 Id = obj.Id,
                 Name = obj.ConsumerName,
@@ -64,12 +76,33 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 SubscriptionType = obj.SubscriptionType,
                 ConsumerSettings = new ConsumerSettings() { InitialPosition = obj.InitialPosition },
                 CreatedDate = DateTime.Now
+            };
+            _consumerIOService.TryCreateConsumerDirectory(obj.Tenant, obj.Product, obj.Component, obj.Topic, consumer);
+
+            _consumerConnectionRepository.AddConsumer(consumerKey, consumer);
+            _consumerConnectionRepository.AddConsumerConnection(consumerKey);
+
+            // notify other nodes in cluster that a consumer has been connected
+            await NotifyNodesForConsumerConnection(new NotifyConsumerConnection()
+            {
+                ConnectionType = ConnectionType.Connected,
+
+                Tenant = obj.Tenant,
+                Product = obj.Product,
+                Component = obj.Component,
+                Topic = obj.Topic,
+                Id = obj.Id,
+                ConsumerName = obj.ConsumerName,
+                SubscriptionType = obj.SubscriptionType,
+                InitialPosition = InitialPosition.Latest,
             });
+
         }
 
-        private void XNodeEventService_ConsumerDisconnected(ConsumerDisconnectedArgs obj)
+        private async void XNodeEventService_ConsumerDisconnected(ConsumerDisconnectedArgs obj)
         {
-            _consumerIOService.WriteDisconnectedConsumerLog(obj.Tenant, obj.Product, obj.Component, obj.Topic, new Consumer()
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            var consumer = new Consumer()
             {
                 Id = obj.Id,
                 Name = obj.ConsumerName,
@@ -77,11 +110,36 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 Product = obj.Product,
                 Component = obj.Component,
                 Topic = obj.Topic,
+                SubscriptionType = obj.SubscriptionType,
                 CreatedDate = DateTime.Now
-            });
-            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            };
+            _consumerIOService.WriteDisconnectedConsumerLog(obj.Tenant, obj.Product, obj.Component, obj.Topic, consumer);
 
-            ReleaseUnacknoledgedMessageTasks(consumerKey);
+            var consumerState = _consumerConnectionRepository.GetConsumerById(consumerKey);
+            _consumerConnectionRepository.RemoveConsumerConnection(consumerKey);
+
+            // We will not remove the consumer, only when the sending of msgs is done
+            // _consumerConnectionRepository.RemoveConsumer(consumerKey);
+
+            if (obj.SubscriptionType != SubscriptionType.Shared && consumerState.StorageStateProperty.IsNewConsumer == false)
+            {
+                ReleaseUnacknoledgedMessageTasks(consumerKey, true);
+            }
+
+            // notify other nodes in cluster that a consumer has been disconnected
+            await NotifyNodesForConsumerConnection(new NotifyConsumerConnection()
+            {
+                ConnectionType = ConnectionType.Disconnected,
+
+                Tenant = obj.Tenant,
+                Product = obj.Product,
+                Topic = obj.Topic,
+                Component = obj.Component,
+                Id = obj.Id,
+                ConsumerName = obj.ConsumerName,
+                SubscriptionType = obj.SubscriptionType,
+                InitialPosition = InitialPosition.Latest,
+            });
         }
 
         private void XNodeEventService_MessageAcknowledged(Model.Events.Messages.MessageAcknowledgedArgs obj)
@@ -89,6 +147,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             _consumerIOService.WriteMessageAcknowledged(obj);
         }
 
+
+        #region Unacknowledge Messages
         private void XNodeEventService_ConsumerUnacknowledgedMessagesRequested(ConsumerConnectedArgs obj)
         {
             string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
@@ -96,7 +156,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 return;
 
             // We are adding the task to the Dictionary, when the task is done
-            _unacknowledgedMessageProcesses.TryAdd(consumerKey, Task.Run(async () => await TransmitUnacknowledgedMessages(obj)));
+            if (!_unacknowledgedMessageProcesses.ContainsKey(consumerKey))
+                _unacknowledgedMessageProcesses.TryAdd(consumerKey, Task.Run(async () => await TransmitUnacknowledgedMessages(obj)));
         }
 
         private async Task TransmitUnacknowledgedMessages(ConsumerConnectedArgs obj)
@@ -147,25 +208,30 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                     }
                 }
 
-                await AnalysePartitionFiles(obj, partitionFiles, isNewConsumer, unackedMessages);
+                _consumerConnectionRepository.GetConsumerById(consumerKey).StorageStateProperty.IsNewConsumer = isNewConsumer;
+                await AnalysePartitionFiles(obj, partitionFiles, unackedMessages);
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Couldn't sent unacknoledge messages to consumer '{obj.ConsumerName}' at {consumerKey.Replace("~", "/")}; errorDetails = {ex.Message}");
             }
 
-            ReleaseUnacknoledgedMessageTasks(consumerKey);
+            ReleaseUnacknoledgedMessageTasks(consumerKey, true);
         }
 
-        private void ReleaseUnacknoledgedMessageTasks(string consumerKey)
+        private void ReleaseUnacknoledgedMessageTasks(string consumerKey, bool forceRelease = true)
         {
             if (_unacknowledgedMessageProcesses.ContainsKey(consumerKey) != true)
                 return;
 
-            _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey.Replace("~", "/")}' has been released");
+            if (forceRelease == true)
+            {
+                _logger.LogWarning($"Unacknowledged message transmitter for '{consumerKey.Replace("~", "/")}' has been released");
 
-            _unacknowledgedMessageProcesses[consumerKey].Dispose();
-            _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
+                _consumerConnectionRepository.RemoveConsumer(consumerKey);
+                _unacknowledgedMessageProcesses[consumerKey].Dispose();
+                _unacknowledgedMessageProcesses.TryRemove(consumerKey, out _);
+            }
         }
 
         private void CheckPointerDbConnection(ConsumerPointerContext tenantContext, string consumerKey)
@@ -184,8 +250,10 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
             }
         }
 
-        private async Task AnalysePartitionFiles(ConsumerConnectedArgs obj, List<MessageFile> partitionFiles, bool isNewConsumer, IEnumerable<Model.Entities.ConsumerMessage> unackedMessages)
+        private async Task AnalysePartitionFiles(ConsumerConnectedArgs obj, List<MessageFile> partitionFiles, IEnumerable<Model.Entities.ConsumerMessage> unackedMessages)
         {
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            var isNewConsumer = _consumerConnectionRepository.GetConsumerById(consumerKey).StorageStateProperty.IsNewConsumer;
             foreach (var paritionFile in partitionFiles)
             {
                 // here we do check partitions db messages....
@@ -207,36 +275,105 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                         .ToList();
                 }
 
-                await AnalyseFileRows(obj, rows);
+                await AnalyseFileRows(obj, rows, paritionFile.PartitionDate);
 
-                if (isNewConsumer != true)
-                    unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
+                // here is a bug #91, is removing all items form the list
+                // for now we are removing this condition
+                //if (isNewConsumer != true)
+                //    unackedMessages.ToList().RemoveAll(r => rows.Any(u => u.MessageId == r.MessageId));
+
+                // Remove from memory all not used data from here...
+                GC.Collect();
+                GC.SuppressFinalize(this);
+                GC.SuppressFinalize(rows);
             }
         }
 
-        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows)
+        private async Task AnalyseFileRows(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows, DateTime partitionDate)
         {
-            foreach (var row in rows)
-            {
-                var consumerMessage = new ConsumerMessage()
-                {
-                    Consumer = obj.ConsumerName,
-                    Message = new Message()
-                    {
-                        Tenant = obj.Tenant,
-                        Product = obj.Product,
-                        Component = obj.Component,
-                        Topic = obj.Topic,
-                        Id = row.MessageId,
-                        MessageRaw = row.Payload.JsonToObject<object>()
-                    }
-                };
+            string consumerKey = GenerateConsumerKey(obj.Tenant, obj.Product, obj.Component, obj.Topic, obj.ConsumerName);
+            var isNewConsumer = _consumerConnectionRepository.GetConsumerById(consumerKey).StorageStateProperty.IsNewConsumer;
 
-                foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+            if (isNewConsumer == true)
+                CachePointers(obj, rows, partitionDate);
+
+            // Check if the consumer is connected, if yes send messages.
+            if (IsConsumerConnected(consumerKey))
+            {
+                var consumerMessages = new List<ConsumerMessage>();
+                foreach (var row in rows)
                 {
-                    //Transmit the message to the other nodes.
-                    await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessage);
+                    consumerMessages.Add(new ConsumerMessage()
+                    {
+                        Consumer = obj.ConsumerName,
+                        Message = new Message()
+                        {
+                            Tenant = obj.Tenant,
+                            Product = obj.Product,
+                            Component = obj.Component,
+                            Topic = obj.Topic,
+                            Id = row.MessageId,
+
+                            SentDate = row.SentDate,
+
+                            MessageRaw = row.Payload.JsonToObject<object>(),
+                            Headers = row.Headers.JsonToObject<Dictionary<string, object>>()
+                        }
+                    });
+
+                    if (IsConsumerConnected(consumerKey))
+                        await SendToNodes(consumerMessages);
                 }
+                if (IsConsumerConnected(consumerKey))
+                    await SendToNodes(consumerMessages, true);
+                consumerMessages.Clear();
+            }
+        }
+
+        private async Task SendToNodes(List<ConsumerMessage> consumerMessages, bool sendTheRest = false)
+        {
+            if (sendTheRest == false)
+            {
+                if (consumerMessages.Count == _partitionConfiguration.BatchSize)
+                {
+                    foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                    {
+                        //Transmit messages to the other nodes.
+                        await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessages);
+                    }
+                    consumerMessages.Clear();
+                }
+            }
+            else
+            {
+                if (consumerMessages.Count > 0)
+                {
+                    foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                    {
+                        //Transmit messages to the other nodes.
+                        await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("TransmitMessagesToConsumer", consumerMessages);
+                    }
+                }
+            }
+        }
+
+        private void CachePointers(ConsumerConnectedArgs obj, List<Model.Entities.Message> rows, DateTime partitionDate)
+        {
+            // Unacknowledge message, add to the pointer, and send
+            _logger.LogInformation($"Pointers are caching for {obj.ConsumerName} at {obj.Tenant}/{obj.Product}/{obj.Component}/{obj.Topic}");
+            for (int i = 0; i < rows.Count; i++)
+            {
+                _consumerIOService.WriteMessageAcknowledged(new Model.Events.Messages.MessageAcknowledgedArgs()
+                {
+                    Tenant = obj.Tenant,
+                    Product = obj.Product,
+                    Component = obj.Component,
+                    Topic = obj.Topic,
+                    Consumer = obj.ConsumerName,
+                    IsAcknowledged = false,
+                    MessageId = rows[i].MessageId,
+                },
+                partitionDate.ToString("yyyy-MM-dd"));
             }
         }
 
@@ -251,7 +388,8 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
                 string fileName = Path.GetFileNameWithoutExtension(partition);
                 string[] partitionNameSplited = fileName.Split("_");
 
-                var partitionDate = DateTime.Parse($"{partitionNameSplited[2]}-{partitionNameSplited[3]}-{partitionNameSplited[4]}");
+                var partitionDate = DateTime.ParseExact($"{partitionNameSplited[2]}-{partitionNameSplited[3]}-{partitionNameSplited[4]} {partitionNameSplited[5]}:00:00", "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+
 
                 messages.Add(new MessageFile() { Path = partition, PartitionDate = partitionDate });
             });
@@ -260,10 +398,40 @@ namespace Buildersoft.Andy.X.Storage.Core.Service.XNodes.Handlers
 
             return sorted;
         }
+        #endregion
+
+
+        private async Task NotifyNodesForConsumerConnection(NotifyConsumerConnection obj)
+        {
+            if (obj.SubscriptionType != SubscriptionType.Shared)
+            {
+                _logger.LogInformation($"Notify other nodes for Consumer '{obj.ConsumerName}' connection status");
+                // Transmit the message to other connected XNODES.
+                if (_xNodeEventService.GetXNodeConnectionRepository().GetAllServices().Count > 1)
+                {
+                    foreach (var xNode in _xNodeEventService.GetXNodeConnectionRepository().GetAllServices())
+                    {
+                        // this node should be ignored because, it already produces the messages to consumers connected.
+                        if (xNode.Key != _xNodeEventService.GetCurrentXNodeServiceUrl())
+                        {
+                            //Transmit the message to the other nodes.
+                            await xNode.Value.Values.ToList()[0].GetHubConnection().SendAsync("NotifyNodesForConsumerConnection", obj);
+                        }
+                    }
+                }
+            }
+        }
 
         private string GenerateConsumerKey(string tenant, string product, string component, string topic, string consumer)
         {
             return $"{tenant}~{product}~{component}~{topic}~{consumer}";
+        }
+
+        private bool IsConsumerConnected(string consumerKey)
+        {
+            if (_consumerConnectionRepository.GetConsumerById(consumerKey).Connections.Count != 0)
+                return true;
+            return false;
         }
     }
 }

@@ -184,7 +184,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
         }
 
         // Acknowledgement of messages
-        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message, string partitionFile = "none")
+        public void WriteMessageAcknowledged(MessageAcknowledgedArgs message, string partitionFile = "no-index")
         {
             string consumerKey = AddConsumerConnectorGetKey(message.Tenant, message.Product, message.Component, message.Topic, message.Consumer);
 
@@ -208,6 +208,7 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     PartitionIndex = 0
                 });
 
+            connectors[consumerKey].EnableReleaseMemoryFlag();
             InitializeMessagingProcessor(consumerKey);
         }
 
@@ -290,9 +291,6 @@ namespace Buildersoft.Andy.X.Storage.IO.Services
                     _logger.LogWarning($"Pointer controller for '{consumerKey}' stopped working, trying to start {timeOutCounter} of 10");
                     if (timeOutCounter == 10)
                     {
-                        // recreate connection
-                        var consumerKeySplitted = consumerKey.Split('-');
-
                         connectors[consumerKey].StopAutoFlushPointer();
                         connectors.TryRemove(consumerKey, out _);
                         _logger.LogWarning($"Pointer controller for '{consumerKey}' couldn't start. Pointer controller is restarted");

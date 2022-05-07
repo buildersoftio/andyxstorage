@@ -86,5 +86,39 @@ namespace Buildersoft.Andy.X.Storage.IO.Writers
                 // TODO: handle this exception
             }
         }
+
+        public static bool WriteTenantTokenFile(string fileName, string tenant, TenantToken tenantToken)
+        {
+            try
+            {
+
+                string tenantTokenLocation = Path.Combine(TenantLocations.GetTenantTokensDirectory(tenant), fileName);
+
+                File.WriteAllText(tenantTokenLocation, tenantToken.ToPrettyJson());
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public static bool WriteComponentTokenFile(string tenant, string product, string component, string fileName, ComponentToken componentToken)
+        {
+            try
+            {
+
+                string componentTokenLocation = Path.Combine(TenantLocations.GetComponentTokenDirectory(tenant, product, component), fileName);
+
+                File.WriteAllText(componentTokenLocation, componentToken.ToPrettyJson());
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }

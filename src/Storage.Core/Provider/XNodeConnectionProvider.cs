@@ -29,6 +29,7 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
             this.dataStorageConfig = dataStorageConfig;
             this.agentConfiguration = agentConfiguration;
             this.agentId = agentId;
+
             ConnectToXNode();
         }
 
@@ -66,12 +67,19 @@ namespace Buildersoft.Andy.X.Storage.Core.Provider
                         {
                             if (message is HttpClientHandler httpClientHandler)
                             {
-                                httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
-                                httpClientHandler.SslProtocols = SslProtocols.Tls12;
-                                var certLocation = Path.Combine(SystemLocations.GetConfigCertificateDirectory(), nodeConfig.CertificateFile);
-                                httpClientHandler.ClientCertificates.Add(new X509Certificate2(certLocation, nodeConfig.CertificatePassword));
+                                if (nodeConfig.SkipCertificate == true)
+                                {
+                                    httpClientHandler.ServerCertificateCustomValidationCallback +=
+                                        (sender, certificate, chain, sslPolicyErrors) => { return true; };
+                                }
+                                else
+                                {
+                                    httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                                    httpClientHandler.SslProtocols = SslProtocols.Tls12;
+                                    var certLocation = Path.Combine(SystemLocations.GetConfigCertificateDirectory(), nodeConfig.CertificateFile);
+                                    httpClientHandler.ClientCertificates.Add(new X509Certificate2(certLocation, nodeConfig.CertificatePassword));
+                                }
                             }
-
                             return message;
                         };
                     }
